@@ -53,8 +53,8 @@
     <div class="stat-label">Primary focus</div>
   </div>
   <div class="stat-item">
-    <div class="stat-num">FL QSO Party</div>
-    <div class="stat-label">Featured event</div>
+    <div class="stat-num" id="featured-event">—</div>
+    <div class="stat-label">Next contest</div>
   </div>
   <div class="stat-item">
     <div class="stat-num">FL</div>
@@ -224,5 +224,29 @@
   <div class="footer-copy">73 de NE2CC &nbsp;·&nbsp; &copy; 2025 Gulf Coast Contest Club</div>
 </footer>
 
+<script>
+  const contests = [
+    { name: "FL QSO Party",    date: new Date("2026-04-25") },
+    { name: "CQ WPX CW",       date: new Date("2026-05-24") },
+    { name: "ARRL Field Day",   date: new Date("2026-06-27") },
+    { name: "IARU HF Champ",   date: new Date("2026-07-11") },
+    { name: "CQ WW SSB",       date: new Date("2026-10-24") },
+    { name: "ARRL SS CW",      date: new Date("2026-11-07") },
+    { name: "ARRL SS SSB",     date: new Date("2026-11-21") },
+    { name: "CQ WW CW",        date: new Date("2026-11-28") },
+    { name: "ARRL 10 Meter",   date: new Date("2026-12-12") },
+  ];
+
+  const today = new Date();
+  today.setHours(0,0,0,0);
+
+  const next = contests.find(c => c.date >= today);
+  const el = document.getElementById("featured-event");
+  if (next) {
+    el.textContent = next.name;
+  } else {
+    el.textContent = "Stay tuned";
+  }
+</script>
 </body>
 </html>
