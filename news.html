@@ -3,9 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gulf Coast Contest Club — GCCC</title>
-  <meta name="description" content="The Gulf Coast Contest Club, GCCC, based in Reddington Beach, Florida. Serious HF contesting on the Gulf Coast." />
+  <title>News — Gulf Coast Contest Club — GCCC</title>
+  <meta name="description" content="News and updates from the Gulf Coast Contest Club, GCCC." />
   <link rel="stylesheet" href="/gulfcoastcontestclub/assets/css/style.css" />
+  <style>
+    .news-full { max-width: 680px; }
+    .news-full-date { font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--green-primary); margin-bottom: 8px; }
+    .news-full-title { font-family: 'Barlow Condensed', sans-serif; font-size: 1.7rem; font-weight: 700; color: var(--text-dark); line-height: 1.15; margin-bottom: 1rem; }
+    .news-full-body p { color: var(--text-mid); margin-bottom: 1rem; line-height: 1.7; }
+    .news-full-body p:last-child { margin-bottom: 0; }
+    .news-article { padding: 2.5rem 0; border-bottom: 1px solid var(--border); }
+    .news-article:first-child { padding-top: 0; }
+    .news-article:last-child { border-bottom: none; }
+  </style>
 </head>
 <body>
 
@@ -21,192 +31,121 @@
       <span></span><span></span><span></span>
     </button>
     <ul class="nav-links">
-      <li><a href="/gulfcoastcontestclub/index.html" class="active">Home</a></li>
+      <li><a href="/gulfcoastcontestclub/index.html">Home</a></li>
       <li><a href="/gulfcoastcontestclub/about.html">About</a></li>
       <li><a href="/gulfcoastcontestclub/calendar.html">Calendar</a></li>
       <li><a href="/gulfcoastcontestclub/results.html">Results</a></li>
-      <li><a href="/gulfcoastcontestclub/news.html">News</a></li>
+      <li><a href="/gulfcoastcontestclub/news.html" class="active">News</a></li>
       <li><a href="/gulfcoastcontestclub/join.html">Join</a></li>
     </ul>
   </div>
 </nav>
 
-<section class="hero">
+<div class="page-hero">
   <div class="container">
-    <span class="hero-eyebrow">NE2CC &nbsp;·&nbsp; Reddington Beach, Florida</span>
-    <h1>Competing from the Gulf Coast,<br>heard around the world</h1>
-    <p class="hero-sub">A community of serious amateur radio operators dedicated to HF contesting and operating excellence on Florida's Gulf Coast.</p>
-    <div class="hero-actions">
-      <a href="/gulfcoastcontestclub/join.html" class="btn btn-primary">Join GCCC</a>
-      <a href="/gulfcoastcontestclub/calendar.html" class="btn btn-outline">Contest calendar</a>
-    </div>
-  </div>
-</section>
-
-<div class="stat-bar">
-  <div class="stat-item">
-    <div class="stat-num">NE2CC</div>
-    <div class="stat-label">Club callsign</div>
-  </div>
-  <div class="stat-item">
-    <div class="stat-num">HF</div>
-    <div class="stat-label">Primary focus</div>
-  </div>
-  <div class="stat-item">
-    <div class="stat-num" id="featured-event">—</div>
-    <div class="stat-label">Next contest</div>
-  </div>
-  <div class="stat-item">
-    <div class="stat-num">FL</div>
-    <div class="stat-label">Gulf Coast, Florida</div>
+    <h1>News &amp; updates</h1>
+    <p>Contest recaps, Field Day announcements, member news, and club updates.</p>
   </div>
 </div>
 
 <div class="section">
   <div class="container">
-    <div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 2rem;">
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 3rem; align-items: start;">
 
-      <!-- Upcoming contests -->
+      <!-- Main news feed -->
       <div>
-        <div class="section-label">On the air</div>
-        <div class="section-title">Upcoming contests</div>
-        <p class="section-subtitle">Key events for GCCC club members this season.</p>
-        <div class="card">
-          <div class="contest-list">
-            <div class="contest-item">
-              <div class="contest-cal"><div class="contest-cal-month">Apr</div><div class="contest-cal-day">25</div></div>
-              <div class="contest-info">
-                <div class="contest-info-name">Florida QSO Party <span class="badge badge-blue">Home state</span></div>
-                <div class="contest-info-meta">Apr 25–26 · SSB &amp; CW · 40/20/15/10m · 20 hrs total</div>
-              </div>
-            </div>
-            <div class="contest-item">
-              <div class="contest-cal"><div class="contest-cal-month">May</div><div class="contest-cal-day">24</div></div>
-              <div class="contest-info">
-                <div class="contest-info-name">CQ WPX CW <span class="badge badge-green">HF</span></div>
-                <div class="contest-info-meta">48 hours · All bands · CW</div>
-              </div>
-            </div>
-            <div class="contest-item">
-              <div class="contest-cal"><div class="contest-cal-month">Jun</div><div class="contest-cal-day">28</div></div>
-              <div class="contest-info">
-                <div class="contest-info-name">ARRL Field Day <span class="badge badge-blue">Club op</span></div>
-                <div class="contest-info-meta">27 hours · All modes · All welcome</div>
-              </div>
-            </div>
-            <div class="contest-item">
-              <div class="contest-cal"><div class="contest-cal-month">Oct</div><div class="contest-cal-day">25</div></div>
-              <div class="contest-info">
-                <div class="contest-info-name">CQ WW SSB <span class="badge badge-green">HF</span></div>
-                <div class="contest-info-meta">48 hours · All bands · Phone</div>
-              </div>
-            </div>
-            <div class="contest-item">
-              <div class="contest-cal"><div class="contest-cal-month">Nov</div><div class="contest-cal-day">1</div></div>
-              <div class="contest-info">
-                <div class="contest-info-name">ARRL Sweepstakes CW <span class="badge badge-green">HF</span></div>
-                <div class="contest-info-meta">24 hours · All bands · CW</div>
-              </div>
-            </div>
-            <div class="contest-item">
-              <div class="contest-cal"><div class="contest-cal-month">Nov</div><div class="contest-cal-day">22</div></div>
-              <div class="contest-info">
-                <div class="contest-info-name">CQ WW CW <span class="badge badge-green">HF</span></div>
-                <div class="contest-info-meta">48 hours · All bands · CW</div>
-              </div>
+        <div class="news-article">
+          <div class="news-full">
+            <div class="news-full-date">April 2025</div>
+            <div class="news-full-title">Field Day 2025 — site confirmed, operators wanted</div>
+            <div class="news-full-body">
+              <p>GCCC will operate from a waterfront location in the Reddington Beach area for ARRL Field Day 2025. We're planning a 2A operation and welcome all licensed club members to participate as operators, loggers, or support crew.</p>
+              <p>Field Day is one of the most public-facing events in amateur radio — a great chance to operate with the club and introduce the hobby to the community. More details on frequency assignments, operating shifts, and equipment will be shared via club net in the coming weeks.</p>
+              <p>If you're interested in helping out or operating, reach out through the <a href="/gulfcoastcontestclub/join.html">contact form</a>. All General class and above are welcome.</p>
             </div>
           </div>
-          <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border);">
-            <a href="/gulfcoastcontestclub/calendar.html" class="btn btn-green" style="font-size: 13px; padding: 8px 18px;">Full calendar →</a>
+        </div>
+
+        <div class="news-article">
+          <div class="news-full">
+            <div class="news-full-date">December 2024</div>
+            <div class="news-full-title">CQ WW CW 2024 — GCCC posts competitive score</div>
+            <div class="news-full-body">
+              <p>Members operating under the GCCC banner turned in a strong performance in the 2024 CQ WW CW contest. Conditions on 20 and 15 meters were favorable, with solid European runs on Saturday and good Caribbean activity throughout the weekend.</p>
+              <p>The club multi-single operation finished with a claimed score of 2,847,320 points — a solid result for the West Central Florida section. Individual operator scores are posted on <a href="https://www.3830scores.com" target="_blank" rel="noopener">3830scores.com</a> under the GCCC club affiliation.</p>
+              <p>Thanks to everyone who got on the air and submitted under the club banner. Full results will be updated on the <a href="/gulfcoastcontestclub/results.html">results page</a> once adjudicated scores are published by CQ.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="news-article">
+          <div class="news-full">
+            <div class="news-full-date">October 2024</div>
+            <div class="news-full-title">New members welcome — enrollment open</div>
+            <div class="news-full-body">
+              <p>GCCC is open to new members. If you hold a General class license or above and have an interest in HF contesting — whether you're experienced or just getting started — we'd love to hear from you.</p>
+              <p>We can help you get set up on major contest logging programs like N1MM+, talk through antenna strategies for the Florida coastal environment, and get you connected with other active operators in the club. Contesting is more fun with a group, and submitting your scores under the NE2CC affiliation contributes to club standings in CQ and ARRL events.</p>
+              <p>Use the <a href="/gulfcoastcontestclub/join.html">contact form</a> to reach out. No dues, no complicated process — just a love of HF and a desire to compete.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="news-article">
+          <div class="news-full">
+            <div class="news-full-date">July 2024</div>
+            <div class="news-full-title">ARRL Field Day 2024 recap</div>
+            <div class="news-full-body">
+              <p>The club completed another successful ARRL Field Day operation in June 2024. Operating in the 2A category, GCCC accumulated 4,210 points over the 27-hour event.</p>
+              <p>Conditions were mixed — 20 meters was reliable throughout Saturday afternoon and evening, while 40 meters opened up nicely after local sunset. 10 meters offered some surprise openings on Sunday morning that yielded a solid run of contacts before the band faded.</p>
+              <p>Thanks to all operators, loggers, and support crew who participated. Field Day is always one of the best days of the year to be a ham radio operator. See you next June.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="news-article">
+          <div class="news-full">
+            <div class="news-full-date">December 2023</div>
+            <div class="news-full-title">CQ WW CW 2023 — results posted</div>
+            <div class="news-full-body">
+              <p>Results are in for the 2023 CQ WW CW contest. The GCCC multi-single operation finished with a claimed score of 2,214,860 — a solid performance from the West Central Florida section.</p>
+              <p>Conditions were particularly strong on 15 meters this cycle, with long-path openings to Asia and consistent European runs through Saturday evening. The club will be looking to improve on this in the 2024 season.</p>
+              <p>All scores are posted on the <a href="/gulfcoastcontestclub/results.html">results page</a> and on 3830scores.com.</p>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Right column -->
-      <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+      <!-- Sidebar -->
+      <div style="display: flex; flex-direction: column; gap: 1.25rem; position: sticky; top: 76px;">
+        <div class="card card-sm">
+          <div class="section-label" style="margin-bottom: 0.75rem;">Quick links</div>
+          <ul style="list-style: none; font-size: 14px; display: flex; flex-direction: column; gap: 8px;">
+            <li><a href="/gulfcoastcontestclub/calendar.html">→ Contest calendar</a></li>
+            <li><a href="/gulfcoastcontestclub/results.html">→ Club results</a></li>
+            <li><a href="/gulfcoastcontestclub/join.html">→ Join GCCC</a></li>
+            <li><a href="https://www.3830scores.com" target="_blank" rel="noopener">→ 3830scores.com</a></li>
+            <li><a href="https://www.arrl.org/contest-calendar" target="_blank" rel="noopener">→ ARRL contest calendar</a></li>
+          </ul>
+        </div>
 
-        <!-- Latest news -->
-        <div>
-          <div class="section-label">Latest</div>
-          <div class="section-title">News</div>
-          <p class="section-subtitle">Club updates and contest results.</p>
-          <div class="card">
-            <div class="news-post">
-              <div class="news-post-date">April 2025</div>
-              <div class="news-post-title">Field Day 2025 site confirmed</div>
-              <div class="news-post-excerpt">GCCC will operate from a waterfront site in the Reddington Beach area for ARRL Field Day 2025. Members only.</div>
-              <a href="/gulfcoastcontestclub/news.html" class="news-post-link">Read more →</a>
-            </div>
-            <div class="news-post">
-              <div class="news-post-date">December 2024</div>
-              <div class="news-post-title">Strong showing in CQ WW CW</div>
-              <div class="news-post-excerpt">Members posted competitive scores across multiple categories. Results on 3830scores.com.</div>
-              <a href="/gulfcoastcontestclub/news.html" class="news-post-link">Read more →</a>
-            </div>
-            <div class="news-post">
-              <div class="news-post-date">October 2024</div>
-              <div class="news-post-title">New members welcome</div>
-              <div class="news-post-excerpt">GCCC is a closed club — membership is by invitation only.</div>
-              <a href="/gulfcoastcontestclub/join.html" class="news-post-link">Join GCCC →</a>
-            </div>
+        <div class="card card-sm" style="background: var(--green-tint); border-color: var(--green-primary);">
+          <div style="font-size: 14px; color: var(--green-dark); line-height: 1.55; margin-bottom: 0.75rem;">
+            <strong>Want to be featured here?</strong><br>
+            Members who submit contest scores under NE2CC can have their results included in club news posts.
+          </div>
+          <a href="/gulfcoastcontestclub/join.html" class="btn btn-green" style="font-size: 13px; padding: 8px 16px;">Join the club →</a>
+        </div>
+
+        <div class="card card-sm">
+          <div class="section-label" style="margin-bottom: 0.75rem;">Upcoming</div>
+          <div style="font-size: 14px; color: var(--text-muted);">
+            <div style="margin-bottom: 8px;"><strong style="color: var(--text-dark);">Field Day 2025</strong><br>June — Reddington Beach area. Members only.</div>
+            <div><strong style="color: var(--text-dark);">CQ WW SSB</strong><br>Last weekend October — submit under NE2CC.</div>
           </div>
         </div>
-
-        <!-- Join CTA -->
-        <div class="cta-block">
-          <h2>Join GCCC</h2>
-          <p>Membership is by invitation only. If you've been invited, use the contact form to connect.</p>
-          <a href="/gulfcoastcontestclub/join.html" class="btn btn-primary">Get in touch</a>
-        </div>
-
       </div>
+
     </div>
-
-    <!-- About strip -->
-    <div style="margin-top: 3rem;">
-      <div class="section-label">Who we are</div>
-      <div class="section-title" style="margin-bottom: 0.25rem;">About the club</div>
-      <p class="section-subtitle">GCCC is based in Reddington Beach, FL — one of the best DX locations in the southeastern United States.</p>
-      <div class="grid-3">
-        <div class="card">
-          <div class="about-block">
-            <div class="about-icon">
-              <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="8" stroke="#1a5c3a" stroke-width="1.6"/><path d="M11 7v4l3 2" stroke="#1a5c3a" stroke-width="1.6" stroke-linecap="round"/></svg>
-            </div>
-            <div>
-              <h3>Serious contesting</h3>
-              <p>We compete in all major HF contests year-round and submit scores under the GCCC club banner.</p>
-            </div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="about-block">
-            <div class="about-icon">
-              <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 3C7 3 3 7 3 11s4 8 8 8" stroke="#1a5c3a" stroke-width="1.6" stroke-linecap="round"/><path d="M11 6C9 6 7 8 7 11s2 5 4 5" stroke="#1a5c3a" stroke-width="1.6" stroke-linecap="round"/><path d="M11 3c4 0 8 4 8 8s-4 8-8 8" stroke="#1a5c3a" stroke-width="1.4" stroke-linecap="round" stroke-dasharray="2 3"/></svg>
-            </div>
-            <div>
-              <h3>Gulf Coast advantage</h3>
-              <p>Reddington Beach offers excellent propagation paths to Europe, the Caribbean, and South America.</p>
-            </div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="about-block">
-            <div class="about-icon">
-              <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M5 18V9l6-5 6 5v9" stroke="#1a5c3a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><rect x="8" y="12" width="6" height="6" rx="1" stroke="#1a5c3a" stroke-width="1.6"/></svg>
-            </div>
-            <div>
-              <h3>Open to all hams</h3>
-              <p>Membership is by invitation only. Current members can sponsor new applicants.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div style="margin-top: 1.25rem;">
-        <a href="/gulfcoastcontestclub/about.html" class="btn btn-green">Learn more about GCCC →</a>
-      </div>
-    </div>
-
   </div>
 </div>
 
@@ -224,29 +163,5 @@
   <div class="footer-copy">73 de NE2CC &nbsp;·&nbsp; &copy; 2025 Gulf Coast Contest Club</div>
 </footer>
 
-<script>
-  const contests = [
-    { name: "FL QSO Party",    date: new Date("2026-04-25") },
-    { name: "CQ WPX CW",       date: new Date("2026-05-24") },
-    { name: "ARRL Field Day",   date: new Date("2026-06-27") },
-    { name: "IARU HF Champ",   date: new Date("2026-07-11") },
-    { name: "CQ WW SSB",       date: new Date("2026-10-24") },
-    { name: "ARRL SS CW",      date: new Date("2026-11-07") },
-    { name: "ARRL SS SSB",     date: new Date("2026-11-21") },
-    { name: "CQ WW CW",        date: new Date("2026-11-28") },
-    { name: "ARRL 10 Meter",   date: new Date("2026-12-12") },
-  ];
-
-  const today = new Date();
-  today.setHours(0,0,0,0);
-
-  const next = contests.find(c => c.date >= today);
-  const el = document.getElementById("featured-event");
-  if (next) {
-    el.textContent = next.name;
-  } else {
-    el.textContent = "Stay tuned";
-  }
-</script>
 </body>
 </html>

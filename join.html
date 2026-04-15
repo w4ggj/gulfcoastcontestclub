@@ -3,20 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Contest Calendar — Gulf Coast Contest Club — GCCC</title>
-  <meta name="description" content="GCCC contest calendar — major HF contests for Gulf Coast Contest Club members." />
+  <title>Join GCCC — Gulf Coast Contest Club</title>
+  <meta name="description" content="Join the Gulf Coast Contest Club, GCCC — based in Reddington Beach, Florida." />
   <link rel="stylesheet" href="/gulfcoastcontestclub/assets/css/style.css" />
-  <style>
-    .cal-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-    .cal-table th { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); padding: 0.6rem 1rem; text-align: left; border-bottom: 2px solid var(--border-dark); background: var(--off-white); }
-    .cal-table td { padding: 0.85rem 1rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
-    .cal-table tr:last-child td { border-bottom: none; }
-    .cal-table tr:hover td { background: var(--green-tint); }
-    .cal-contest-name { font-weight: 600; color: var(--text-dark); }
-    .cal-notes { font-size: 13px; color: var(--text-muted); }
-    .month-header { background: var(--green-primary); }
-    .month-header td { color: var(--white); font-family: 'Barlow Condensed', sans-serif; font-size: 15px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 0.5rem 1rem; border: none; }
-  </style>
 </head>
 <body>
 
@@ -34,190 +23,127 @@
     <ul class="nav-links">
       <li><a href="/gulfcoastcontestclub/index.html">Home</a></li>
       <li><a href="/gulfcoastcontestclub/about.html">About</a></li>
-      <li><a href="/gulfcoastcontestclub/calendar.html" class="active">Calendar</a></li>
+      <li><a href="/gulfcoastcontestclub/calendar.html">Calendar</a></li>
       <li><a href="/gulfcoastcontestclub/results.html">Results</a></li>
       <li><a href="/gulfcoastcontestclub/news.html">News</a></li>
-      <li><a href="/gulfcoastcontestclub/join.html">Join</a></li>
+      <li><a href="/gulfcoastcontestclub/join.html" class="active">Join</a></li>
     </ul>
   </div>
 </nav>
 
 <div class="page-hero">
   <div class="container">
-    <h1>Contest calendar</h1>
-    <p>Major HF contests for GCCC members. Submit scores under the GCCC club affiliation to count toward club standings.</p>
+    <h1>Join GCCC</h1>
+    <p>Get in touch to learn more about the Gulf Coast Contest Club and connect with other HF contesters on the Gulf Coast.</p>
   </div>
 </div>
 
 <div class="section">
   <div class="container">
+    <div style="display: grid; grid-template-columns: 1.3fr 1fr; gap: 3rem; align-items: start;">
 
-    <div class="callout" style="margin-bottom: 2rem;">
-      Dates shift slightly year to year. Verify exact dates at <a href="https://www.arrl.org/contest-calendar" target="_blank" rel="noopener">arrl.org/contest-calendar</a> and <a href="https://www.cqww.com" target="_blank" rel="noopener">cqww.com</a>. All members are encouraged to submit claimed scores to <a href="https://www.3830scores.com" target="_blank" rel="noopener">3830scores.com</a> under the GCCC club affiliation.
-    </div>
+      <!-- Contact form -->
+      <div>
+        <div class="section-label">Get in touch</div>
+        <h2 class="section-title" style="margin-bottom: 0.5rem;">Contact the club</h2>
+        <p style="color: var(--text-muted); margin-bottom: 1.75rem; font-size: 15px;">GCCC membership is by invitation only. If you have been invited or sponsored by a current member, use this form to get connected. A club member will follow up with next steps.</p>
 
-    <div class="card" style="overflow-x: auto;">
-      <table class="cal-table">
-        <thead>
-          <tr>
-            <th style="width: 130px;">Typical dates</th>
-            <th>Contest</th>
-            <th>Mode</th>
-            <th>Duration</th>
-            <th>Notes</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr class="month-header"><td colspan="5">January</td></tr>
-          <tr>
-            <td>Mid-January</td>
-            <td class="cal-contest-name">ARRL January VHF</td>
-            <td><span class="badge badge-blue">All modes</span></td>
-            <td>33 hrs</td>
-            <td class="cal-notes">Bonus event for members with VHF capability</td>
-          </tr>
-          <tr>
-            <td>Late January</td>
-            <td class="cal-contest-name">CQ WW RTTY</td>
-            <td><span class="badge badge-green">RTTY</span></td>
-            <td>48 hrs</td>
-            <td class="cal-notes">Digital warm-up for the season</td>
-          </tr>
+        <!-- 
+          TO USE THIS FORM:
+          1. Go to https://formspree.io and create a free account
+          2. Create a new form and get your form endpoint URL
+          3. Replace "YOUR_FORMSPREE_ID" below with your actual form ID
+          4. The form will send submissions to your email address
+        -->
+        <form action="https://formspree.io/f/YOUR_FORMSPREE_ID" method="POST">
 
-          <tr class="month-header"><td colspan="5">February</td></tr>
-          <tr>
-            <td>Early February</td>
-            <td class="cal-contest-name">CQ WPX RTTY</td>
-            <td><span class="badge badge-green">RTTY</span></td>
-            <td>48 hrs</td>
-            <td class="cal-notes"></td>
-          </tr>
-          <tr>
-            <td>Third weekend</td>
-            <td class="cal-contest-name">ARRL DX CW</td>
-            <td><span class="badge badge-green">CW</span></td>
-            <td>48 hrs</td>
-            <td class="cal-notes">Key HF event — strong EU openings from FL</td>
-          </tr>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+              <label for="name">Name</label>
+              <input type="text" id="name" name="name" placeholder="Your name" required />
+            </div>
+            <div class="form-group">
+              <label for="callsign">Callsign</label>
+              <input type="text" id="callsign" name="callsign" placeholder="W4XYZ" required />
+            </div>
+          </div>
 
-          <tr class="month-header"><td colspan="5">March</td></tr>
-          <tr>
-            <td>First weekend</td>
-            <td class="cal-contest-name">ARRL DX SSB</td>
-            <td><span class="badge badge-green">SSB</span></td>
-            <td>48 hrs</td>
-            <td class="cal-notes">Key HF event</td>
-          </tr>
-          <tr>
-            <td>Last weekend</td>
-            <td class="cal-contest-name">CQ WPX SSB</td>
-            <td><span class="badge badge-green">SSB</span></td>
-            <td>48 hrs</td>
-            <td class="cal-notes"></td>
-          </tr>
+          <div class="form-group">
+            <label for="email">Email address</label>
+            <input type="email" id="email" name="email" placeholder="you@example.com" required />
+          </div>
 
-          <tr class="month-header"><td colspan="5">April</td></tr>
-          <tr>
-            <td>Apr 25–26</td>
-            <td class="cal-contest-name">Florida QSO Party <a href="https://floridaqsoparty.org/rules/" target="_blank" rel="noopener" style="font-size: 12px; font-weight: 400; color: var(--green-primary);">Rules ↗</a></td>
-            <td><span class="badge badge-green">SSB &amp; CW</span></td>
-            <td>20 hrs</td>
-            <td class="cal-notes">Sat 1600Z–Sun 0200Z, then Sun 1200Z–2200Z (10 hr break). 40/20/15/10m only — no 80m, 160m, WARC, or digital. FL stations send county; others send state. Sponsored by the Florida Contest Group. Great home-state event for GCCC members.</td>
-          </tr>
+          <div class="form-group">
+            <label for="license">License class</label>
+            <select id="license" name="license" required>
+              <option value="" disabled selected>Select your license class</option>
+              <option value="general">General</option>
+              <option value="extra">Amateur Extra</option>
+            </select>
+          </div>
 
-          <tr class="month-header"><td colspan="5">May</td></tr>
-          <tr>
-            <td>Last weekend</td>
-            <td class="cal-contest-name">CQ WPX CW</td>
-            <td><span class="badge badge-green">CW</span></td>
-            <td>48 hrs</td>
-            <td class="cal-notes"></td>
-          </tr>
+          <div class="form-group">
+            <label for="experience">Tell us about your station and contesting experience</label>
+            <textarea id="experience" name="experience" placeholder="Rig, antenna setup, contests you've entered, what you're hoping to get out of the club — anything you'd like to share..."></textarea>
+          </div>
 
-          <tr class="month-header"><td colspan="5">June</td></tr>
-          <tr>
-            <td>Second weekend</td>
-            <td class="cal-contest-name">ARRL June VHF</td>
-            <td><span class="badge badge-blue">All modes</span></td>
-            <td>33 hrs</td>
-            <td class="cal-notes">Bonus event</td>
-          </tr>
-          <tr>
-            <td>Last full weekend</td>
-            <td class="cal-contest-name">ARRL Field Day</td>
-            <td><span class="badge badge-blue">All modes</span></td>
-            <td>27 hrs</td>
-            <td class="cal-notes"><strong>Club operation — members only</strong></td>
-          </tr>
-
-          <tr class="month-header"><td colspan="5">July</td></tr>
-          <tr>
-            <td>Second weekend</td>
-            <td class="cal-contest-name">IARU HF Championship</td>
-            <td><span class="badge badge-blue">All modes</span></td>
-            <td>24 hrs</td>
-            <td class="cal-notes"></td>
-          </tr>
-
-          <tr class="month-header"><td colspan="5">October</td></tr>
-          <tr>
-            <td>Last weekend</td>
-            <td class="cal-contest-name">CQ WW SSB</td>
-            <td><span class="badge badge-green">SSB</span></td>
-            <td>48 hrs</td>
-            <td class="cal-notes">Flagship event — all members encouraged to enter</td>
-          </tr>
-
-          <tr class="month-header"><td colspan="5">November</td></tr>
-          <tr>
-            <td>First weekend</td>
-            <td class="cal-contest-name">ARRL Sweepstakes CW</td>
-            <td><span class="badge badge-green">CW</span></td>
-            <td>24 hrs</td>
-            <td class="cal-notes">Key domestic event — club aggregate scoring</td>
-          </tr>
-          <tr>
-            <td>Third weekend</td>
-            <td class="cal-contest-name">ARRL Sweepstakes SSB</td>
-            <td><span class="badge badge-green">SSB</span></td>
-            <td>24 hrs</td>
-            <td class="cal-notes">Key domestic event — club aggregate scoring</td>
-          </tr>
-          <tr>
-            <td>Last weekend</td>
-            <td class="cal-contest-name">CQ WW CW</td>
-            <td><span class="badge badge-green">CW</span></td>
-            <td>48 hrs</td>
-            <td class="cal-notes">Flagship event — all members encouraged to enter</td>
-          </tr>
-
-          <tr class="month-header"><td colspan="5">December</td></tr>
-          <tr>
-            <td>Second weekend</td>
-            <td class="cal-contest-name">ARRL 10 Meter Contest</td>
-            <td><span class="badge badge-blue">SSB &amp; CW</span></td>
-            <td>48 hrs</td>
-            <td class="cal-notes">Season closer — excellent from Florida during high solar flux</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div style="margin-top: 2rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem;">
-      <div class="card card-sm">
-        <div class="section-label" style="margin-bottom: 0.5rem;">Score submission</div>
-        <p style="font-size: 14px; color: var(--text-muted);">Submit all claimed scores to <a href="https://www.3830scores.com" target="_blank" rel="noopener">3830scores.com</a> and list <strong>NE2CC</strong> as your club affiliation. This counts toward club aggregate standings in ARRL and CQ contests.</p>
+          <button type="submit" class="btn btn-green" style="width: 100%; padding: 13px; font-size: 15px;">Send message →</button>
+        </form>
       </div>
-      <div class="card card-sm">
-        <div class="section-label" style="margin-bottom: 0.5rem;">Logging software</div>
-        <p style="font-size: 14px; color: var(--text-muted);">Club members use N1MM+, Win-Test, and N3FJP depending on the contest. Reach out via the <a href="/gulfcoastcontestclub/join.html">contact form</a> if you need help getting set up with contest logging.</p>
-      </div>
-      <div class="card card-sm">
-        <div class="section-label" style="margin-bottom: 0.5rem;">Field Day</div>
-        <p style="font-size: 14px; color: var(--text-muted);">ARRL Field Day is our biggest club event of the year. We operate as a group from a local site — operators, loggers, and helpers all welcome. Watch <a href="/gulfcoastcontestclub/news.html">News</a> for site announcements.</p>
+
+      <!-- Sidebar info -->
+      <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+
+        <div class="card card-sm">
+          <div class="section-label" style="margin-bottom: 0.75rem;">What to expect</div>
+          <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 0.75rem;">Once you submit this form, a club member will follow up to verify your sponsorship and walk you through the affiliation process.</p>
+          <p style="font-size: 14px; color: var(--text-muted);">Membership is by invitation only. You must be sponsored by a current GCCC member.</p>
+        </div>
+
+        <div class="card card-sm">
+          <div class="section-label" style="margin-bottom: 0.75rem;">Membership requirements</div>
+          <ul style="list-style: none; font-size: 14px; display: flex; flex-direction: column; gap: 8px;">
+            <li style="display: flex; align-items: flex-start; gap: 8px;">
+              <span style="color: var(--green-primary); font-weight: 700; margin-top: 1px;">✓</span>
+              <span>General class amateur radio license or above</span>
+            </li>
+            <li style="display: flex; align-items: flex-start; gap: 8px;">
+              <span style="color: var(--green-primary); font-weight: 700; margin-top: 1px;">✓</span>
+              <span>Active interest in HF contesting</span>
+            </li>
+            <li style="display: flex; align-items: flex-start; gap: 8px;">
+              <span style="color: var(--green-primary); font-weight: 700; margin-top: 1px;">✓</span>
+              <span>Must be sponsored by a current GCCC member</span>
+            </li>
+            <li style="display: flex; align-items: flex-start; gap: 8px;">
+              <span style="color: var(--green-primary); font-weight: 700; margin-top: 1px;">✓</span>
+              <span>Membership by invitation only</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="card card-sm">
+          <div class="section-label" style="margin-bottom: 0.75rem;">Find us on the air</div>
+          <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 0.75rem;">You can also find NE2CC on the air during major HF contests. Search for NE2CC on <a href="https://www.3830scores.com" target="_blank" rel="noopener">3830scores.com</a> to see our recent activity and claimed scores.</p>
+          <div style="font-size: 14px;">
+            <strong style="color: var(--text-dark);">Club callsign:</strong> <span style="font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 700; color: var(--green-primary);">NE2CC</span><br>
+            <strong style="color: var(--text-dark);">Location:</strong> Reddington Beach, FL
+          </div>
+        </div>
+
+        <div class="card card-sm">
+          <div class="section-label" style="margin-bottom: 0.75rem;">Useful resources</div>
+          <ul style="list-style: none; font-size: 14px; display: flex; flex-direction: column; gap: 8px;">
+            <li><a href="https://www.arrl.org" target="_blank" rel="noopener">→ ARRL (arrl.org)</a></li>
+            <li><a href="https://www.cqww.com" target="_blank" rel="noopener">→ CQ World Wide Contest</a></li>
+            <li><a href="https://www.3830scores.com" target="_blank" rel="noopener">→ 3830scores.com</a></li>
+            <li><a href="https://n1mm.hamdocs.com" target="_blank" rel="noopener">→ N1MM+ Logger</a></li>
+            <li><a href="https://www.qrz.com/db/NE2CC" target="_blank" rel="noopener">→ NE2CC on QRZ</a></li>
+          </ul>
+        </div>
+
       </div>
     </div>
-
   </div>
 </div>
 
