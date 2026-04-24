@@ -388,6 +388,7 @@ img { max-width: 100%; display: block; }
 
 .badge-green { background: var(--green-tint); color: var(--green-dark); }
 .badge-blue  { background: #e6f1fb; color: #0c447c; }
+.badge-ref  { background: #ffcccc; color: #a20000; }
 
 /* ── NEWS POSTS ── */
 .news-post { padding: 1.25rem 0; border-bottom: 1px solid var(--border); }
