@@ -6,6 +6,55 @@
   <title>Photos — Gulf Coast Contest Club — GCCC</title>
   <meta name="description" content="Photos from Gulf Coast Contest Club events, Field Day operations, and contest activities." />
   <link rel="stylesheet" href="/gulfcoastcontestclub/assets/css/style.css" />
+  <style>
+    .album-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+    .album-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      text-decoration: none;
+      display: block;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .album-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+      text-decoration: none;
+    }
+    .album-card-thumb {
+      background: var(--green-primary);
+      height: 160px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .album-card-body {
+      padding: 1rem 1.25rem;
+    }
+    .album-card-title {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-dark);
+      margin-bottom: 4px;
+    }
+    .album-card-meta {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    .album-card-link {
+      display: inline-block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--green-primary);
+      margin-top: 8px;
+    }
+  </style>
 </head>
 <body>
 
@@ -42,39 +91,30 @@
 <div class="section">
   <div class="container">
 
-    <div class="section-label">Club album</div>
-    <h2 class="section-title" style="margin-bottom: 0.5rem;">Gulf Coast Contest Club photos</h2>
-    <p style="color: var(--text-muted); margin-bottom: 2rem;">Photos from GCCC events, Field Day operations, station setups, and contest activities. Album hosted on Google Photos.</p>
+    <div class="section-label">Club albums</div>
+    <h2 class="section-title" style="margin-bottom: 0.5rem;">GCCC photo albums</h2>
+    <p style="color: var(--text-muted); margin-bottom: 2rem;">Click any album to browse photos. Albums open in a new tab on myalbum.com.</p>
 
-    <!-- Album card -->
-    <a href="https://photos.app.goo.gl/6zaiuo5XdjmVda2o6" target="_blank" rel="noopener" style="text-decoration: none;">
-      <div style="
-        background: var(--green-primary);
-        border-radius: 12px;
-        padding: 3rem 2rem;
-        text-align: center;
-        max-width: 560px;
-        margin: 0 auto 2.5rem;
-        transition: transform 0.2s, background 0.2s;
-        cursor: pointer;
-      " onmouseover="this.style.background='#226b45'" onmouseout="this.style.background='#1a5c3a'">
-        <div style="width: 72px; height: 72px; background: rgba(255,255,255,0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem;">
-          <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-            <rect x="3" y="8" width="30" height="22" rx="3" stroke="white" stroke-width="1.8"/>
-            <circle cx="18" cy="19" r="6" stroke="white" stroke-width="1.8"/>
-            <path d="M12 8l2-4h8l2 4" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <div class="album-grid">
+
+      <!-- Album 1: Florida QSO Party Setup -->
+      <a href="https://myalbum.com/album/NtFrQ7up4o7R2k/?invite=db6a8dc4-8ae3-443d-bdb9-e8810875241e" target="_blank" rel="noopener" class="album-card">
+        <div class="album-card-thumb">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+            <rect x="4" y="10" width="40" height="30" rx="4" stroke="white" stroke-width="2"/>
+            <circle cx="24" cy="25" r="8" stroke="white" stroke-width="2"/>
+            <path d="M16 10l3-6h10l3 6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </div>
-        <div style="font-family: 'Barlow Condensed', sans-serif; font-size: 1.5rem; font-weight: 700; color: white; margin-bottom: 0.5rem;">View Photo Album</div>
-        <div style="color: rgba(255,255,255,0.75); font-size: 14px; margin-bottom: 1.25rem;">Opens in Google Photos</div>
-        <div style="display: inline-block; background: white; color: #1a5c3a; font-weight: 600; font-size: 14px; padding: 10px 24px; border-radius: 4px;">
-          Open album →
+        <div class="album-card-body">
+          <div class="album-card-title">Florida QSO Party Setup</div>
+          <div class="album-card-meta">April 2026 · Station setup &amp; operations</div>
+          <div class="album-card-link">View album →</div>
         </div>
-      </div>
-    </a>
+      </a>
 
-    <div class="callout">
-      Photos are hosted on Google Photos. Click the album above to browse, download, or share individual images. More photos will be added after each club event.
+      <!-- Add future albums below this line by copying the block above -->
+
     </div>
 
   </div>
