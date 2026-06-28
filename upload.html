@@ -160,9 +160,9 @@
       </button>
 
       <div class="upload-note">
-        <strong>A few notes:</strong> Large videos can take a while on slower connections — please keep
-        this tab open until each file shows <em>Done</em>. Files of up to about 35&nbsp;MB each work best;
-        very large videos may need to be compressed or shared another way.
+        <strong>A few notes:</strong> Large videos (even 1&nbsp;GB+) are supported, but big files can take
+        a while on slower connections — please keep this tab open and your device awake until each file
+        shows <em>Done</em>. Uploads resume in chunks, so a brief network hiccup won't always start over.
       </div>
 
     </div>
@@ -192,8 +192,11 @@
      ============================================================ */
   var UPLOAD_ENDPOINT = "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
 
-  // ~35 MB raw cap keeps the base64 payload under Apps Script's POST limit.
-  var MAX_BYTES = 35 * 1024 * 1024;
+  // Sanity ceiling only — Drive resumable uploads handle multi-GB files.
+  var MAX_BYTES = 6 * 1024 * 1024 * 1024; // 6 GB
+  // Upload chunk size: must be a multiple of 256 KB per the Drive API.
+  var CHUNK_SIZE = 16 * 1024 * 1024; // 16 MB
+  var CHUNK_RETRIES = 4;
 
   var dropzone   = document.getElementById('dropzone');
   var fileInput  = document.getElementById('fileInput');
@@ -286,7 +289,7 @@
         setStatus(item, 'Not a photo/video', 'error');
         item.done = true;
       } else if (tooBig) {
-        setStatus(item, 'Too large (max 35 MB)', 'error');
+        setStatus(item, 'Too large', 'error');
         item.done = true;
       } else {
         setStatus(item, 'Ready', 'pending');
@@ -304,65 +307,88 @@
     refreshButton();
   }
 
-  // Read a File as raw base64 (no data: prefix).
-  function readBase64(file) {
+  // Ask our Apps Script to start a Drive resumable upload session.
+  // Returns the one-time upload URL the browser streams the file to.
+  function startSession(item, uploader) {
+    return fetch(UPLOAD_ENDPOINT, {
+      method: 'POST',
+      // text/plain keeps this a "simple" CORS request (no preflight),
+      // which Apps Script web apps handle cleanly.
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        filename: item.file.name,
+        mimeType: item.file.type || 'application/octet-stream',
+        size: item.file.size,
+        uploader: uploader
+      })
+    }).then(function (r) { return r.json(); });
+  }
+
+  // PUT one chunk to the resumable session URL.
+  // Resolves 'done' on final 200/201, 'continue' on 308, rejects on error.
+  function putChunk(uploadUrl, blob, start, end, total, item) {
     return new Promise(function (resolve, reject) {
-      var reader = new FileReader();
-      reader.onload = function () {
-        var result = reader.result || '';
-        var comma = result.indexOf(',');
-        resolve(comma > -1 ? result.slice(comma + 1) : result);
+      var xhr = new XMLHttpRequest();
+      xhr.open('PUT', uploadUrl, true);
+      xhr.setRequestHeader('Content-Range', 'bytes ' + start + '-' + (end - 1) + '/' + total);
+      xhr.upload.onprogress = function (evt) {
+        if (evt.lengthComputable) {
+          var pct = Math.round(((start + evt.loaded) / total) * 100);
+          item.bar.style.width = pct + '%';
+          setStatus(item, 'Uploading ' + pct + '%', 'uploading');
+        }
       };
-      reader.onerror = function () { reject(reader.error); };
-      reader.readAsDataURL(file);
+      xhr.onload = function () {
+        if (xhr.status === 308) resolve('continue');
+        else if (xhr.status === 200 || xhr.status === 201) resolve('done');
+        else reject(new Error('HTTP ' + xhr.status));
+      };
+      xhr.onerror = function () { reject(new Error('network')); };
+      xhr.send(blob);
     });
   }
 
   function uploadOne(item, uploader) {
-    return new Promise(function (resolve) {
-      setStatus(item, 'Reading…', 'uploading');
-      readBase64(item.file).then(function (b64) {
-        var xhr = new XMLHttpRequest();
-        xhr.open('POST', UPLOAD_ENDPOINT, true);
-        // text/plain keeps this a "simple" CORS request (no preflight),
-        // which Apps Script web apps handle cleanly.
-        xhr.setRequestHeader('Content-Type', 'text/plain;charset=utf-8');
+    setStatus(item, 'Starting…', 'uploading');
+    return startSession(item, uploader).then(function (resp) {
+      if (!resp || !resp.ok || !resp.uploadUrl) {
+        throw new Error(resp && resp.error ? resp.error : 'Could not start upload');
+      }
+      var uploadUrl = resp.uploadUrl;
+      var file  = item.file;
+      var total = file.size;
 
-        xhr.upload.onprogress = function (evt) {
-          if (evt.lengthComputable) {
-            var pct = Math.round((evt.loaded / evt.total) * 100);
-            item.bar.style.width = pct + '%';
-            setStatus(item, 'Uploading ' + pct + '%', 'uploading');
-          }
-        };
+      // Walk the file chunk by chunk, retrying a failed chunk a few times.
+      function nextChunk(offset) {
+        if (offset >= total) return Promise.resolve(); // zero-byte safety
+        var end  = Math.min(offset + CHUNK_SIZE, total);
+        var blob = file.slice(offset, end);
 
-        xhr.onload = function () {
-          var ok = false;
-          try { ok = JSON.parse(xhr.responseText).ok === true; } catch (e) { ok = false; }
-          if (xhr.status >= 200 && xhr.status < 300 && ok) {
-            item.bar.style.width = '100%';
-            setStatus(item, 'Done ✓', 'done');
-            item.done = true;
-          } else {
-            setStatus(item, 'Failed — retry', 'error');
-          }
-          resolve();
-        };
-        xhr.onerror = function () {
-          setStatus(item, 'Network error — retry', 'error');
-          resolve();
-        };
+        function attempt(tries) {
+          return putChunk(uploadUrl, blob, offset, end, total, item).then(function (state) {
+            if (state === 'done') return; // upload complete
+            return nextChunk(end);        // 308 → send the next chunk
+          }).catch(function (err) {
+            if (tries < CHUNK_RETRIES) {
+              setStatus(item, 'Retrying…', 'uploading');
+              return new Promise(function (res) { setTimeout(res, 1200 * (tries + 1)); })
+                .then(function () { return attempt(tries + 1); });
+            }
+            throw err;
+          });
+        }
+        return attempt(0);
+      }
 
-        xhr.send(JSON.stringify({
-          filename: item.file.name,
-          mimeType: item.file.type || 'application/octet-stream',
-          uploader: uploader,
-          data: b64
-        }));
-      }).catch(function () {
-        setStatus(item, 'Read error — retry', 'error');
-        resolve();
-      });
+      return nextChunk(0);
+    }).then(function () {
+      item.bar.style.width = '100%';
+      setStatus(item, 'Done ✓', 'done');
+      item.done = true;
+    }).catch(function (err) {
+      setStatus(item, 'Failed — retry', 'error');
+      // Surface the reason in a tooltip for debugging.
+      item.status.title = String(err && err.message ? err.message : err);
     });
   }
 

@@ -6,9 +6,16 @@ can **add** files but have **no way to view, list, or delete** anything in the
 folder — they only ever talk to a small Google Apps Script endpoint that *only
 creates* files.
 
-Because GitHub Pages is static (no server), the actual saving-to-Drive is done by
-a free Google Apps Script "web app" that runs as **you** (the folder owner). You
+Because GitHub Pages is static (no server), the saving-to-Drive is brokered by a
+free Google Apps Script "web app" that runs as **you** (the folder owner). You
 deploy it once, paste its URL into `upload.html`, and you're done.
+
+**Large files (1 GB+ videos) are supported.** The script never receives the file
+itself — it asks Google Drive to open a *resumable upload session* and hands the
+browser a one-time upload URL. The browser then streams the file bytes **directly
+to Google's upload servers** in chunks, so there's no practical size limit and a
+brief network hiccup won't always restart the upload. That one-time URL can only
+add the single new file; it can't read, list, or delete anything.
 
 - **Upload page:** `upload.html` → lives at `https://gulfcoastcontestclub.org/upload.html`
 - **Target Drive folder:** `1gQwqY2Dm41JpdAWlGavz_fResDZ_4xmR`
@@ -40,9 +47,11 @@ directly with the people you want to be able to upload.
      without signing in.*
    - **Who has access:** **Anyone**
 4. Click **Deploy**.
-5. Click **Authorize access** and approve the permissions (you may see a
-   "Google hasn't verified this app" screen — click **Advanced ▸ Go to … (unsafe)**;
-   it's your own script, this is normal).
+5. Click **Authorize access** and approve the permissions. The script asks to
+   **see/manage your Drive** and to **connect to an external service** — both are
+   needed so it can open the Drive upload session on a visitor's behalf. You may
+   see a "Google hasn't verified this app" screen — click
+   **Advanced ▸ Go to … (unsafe)**; it's your own script, this is normal.
 6. Copy the **Web app URL**. It looks like:
    `https://script.google.com/macros/s/AKfy............/exec`
 
@@ -65,22 +74,27 @@ directly with the people you want to be able to upload.
 
 ## How it works (and why visitors can't delete anything)
 
-- The upload page reads each chosen file in the browser, base64-encodes it, and
-  POSTs it to your Apps Script URL.
-- The script decodes the file and calls `folder.createFile(...)` — the **only**
-  Drive operation it performs. There is no code path that lists or deletes
-  files, so a visitor literally cannot remove anything.
-- The script runs **as you**, so the visitor never signs in and never gets any
-  access to the folder itself — they only get to hand a file to your script.
+- When a visitor picks a file, the page POSTs only its **name, type, and size**
+  to your Apps Script URL — never the file itself.
+- The script asks Google Drive to open a **resumable upload session** targeting
+  your folder and returns the session's one-time upload URL. Starting a session
+  is the **only** Drive operation it performs — there is no code path that lists,
+  reads, or deletes files, so a visitor literally cannot remove anything.
+- The browser streams the file bytes **directly to Google's upload servers**
+  using that URL. The session URL is bound to that single new file; it grants no
+  other access to the folder.
+- The script runs **as you**, so visitors never sign in and never get any access
+  to the folder itself.
 - The folder's own sharing settings are unchanged. Keep the folder private (or
   view-only) so the public share link can't be used to delete files either.
 
 ## Notes & limits
 
-- **File size:** Apps Script caps a single POST at ~50 MB, and base64 adds ~33%
-  overhead, so the page limits uploads to about **35 MB per file**. Photos and
-  short/compressed videos are fine; very large videos should be compressed or
-  shared another way.
+- **File size:** effectively unlimited for this use — multi-GB videos upload fine
+  because the bytes go straight to Google, not through Apps Script. The page sets
+  a 6 GB sanity ceiling and uploads in 16 MB chunks.
+- **Keep the tab open:** for very large files, ask uploaders to keep the page
+  open and their device awake until each file shows **Done ✓**.
 - **Filenames:** uploads are saved as
   `[name/callsign] - original-name (date time).ext` so nothing overwrites
   anything and you can see who sent what.
