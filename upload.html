@@ -308,20 +308,44 @@
   }
 
   // Ask our Apps Script to start a Drive resumable upload session.
-  // Returns the one-time upload URL the browser streams the file to.
+  // Apps Script can't send the CORS header a cross-origin fetch() needs, so we
+  // call it via JSONP (a <script> request), which isn't subject to CORS.
+  // Returns the one-time upload URL the browser then streams the file to.
+  var jsonpSeq = 0;
   function startSession(item, uploader) {
-    return fetch(UPLOAD_ENDPOINT, {
-      method: 'POST',
-      // text/plain keeps this a "simple" CORS request (no preflight),
-      // which Apps Script web apps handle cleanly.
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({
-        filename: item.file.name,
-        mimeType: item.file.type || 'application/octet-stream',
-        size: item.file.size,
-        uploader: uploader
-      })
-    }).then(function (r) { return r.json(); });
+    return new Promise(function (resolve, reject) {
+      var cbName = 'gcccUpload_' + (++jsonpSeq) + '_' + (new Date().getTime());
+      var script = document.createElement('script');
+
+      function cleanup() {
+        try { delete window[cbName]; } catch (e) { window[cbName] = undefined; }
+        if (script.parentNode) script.parentNode.removeChild(script);
+      }
+
+      var timer = setTimeout(function () {
+        cleanup();
+        reject(new Error('Timed out starting the upload.'));
+      }, 30000);
+
+      window[cbName] = function (data) {
+        clearTimeout(timer);
+        cleanup();
+        resolve(data);
+      };
+      script.onerror = function () {
+        clearTimeout(timer);
+        cleanup();
+        reject(new Error('Could not reach the upload service.'));
+      };
+
+      var qs = '?callback=' + encodeURIComponent(cbName)
+             + '&filename=' + encodeURIComponent(item.file.name)
+             + '&mimeType=' + encodeURIComponent(item.file.type || 'application/octet-stream')
+             + '&size=' + encodeURIComponent(item.file.size)
+             + '&uploader=' + encodeURIComponent(uploader || '');
+      script.src = UPLOAD_ENDPOINT + qs;
+      document.body.appendChild(script);
+    });
   }
 
   // PUT one chunk to the resumable session URL.
