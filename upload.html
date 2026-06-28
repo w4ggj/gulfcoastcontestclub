@@ -190,7 +190,7 @@
      It looks like: https://script.google.com/macros/s/AKfy.../exec
      See UPLOAD-SETUP.md for the one-time setup steps.
      ============================================================ */
-  var UPLOAD_ENDPOINT = "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
+  var UPLOAD_ENDPOINT = "https://script.google.com/macros/s/AKfycbyU4fIMdRrif6kpXaLV9KXti9_GRTrry21rVUpx6fX6LIwxO6yMsb2AQBpNL8RQazp1/exec";
 
   // Sanity ceiling only — Drive resumable uploads handle multi-GB files.
   var MAX_BYTES = 6 * 1024 * 1024 * 1024; // 6 GB
@@ -393,7 +393,7 @@
   }
 
   uploadBtn.addEventListener('click', function () {
-    if (UPLOAD_ENDPOINT === "https://script.google.com/macros/s/AKfycbyU4fIMdRrif6kpXaLV9KXti9_GRTrry21rVUpx6fX6LIwxO6yMsb2AQBpNL8RQazp1/exec") {
+    if (UPLOAD_ENDPOINT === "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE") {
       document.getElementById('notConfigured').classList.remove('hidden');
       return;
     }
