@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Keep this page unlisted: not in nav, not indexed by search engines -->
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Upload Photos &amp; Videos — Gulf Coast Contest Club — GCCC</title>
+  <meta name="description" content="Share your photos and videos from Gulf Coast Contest Club events." />
+  <link rel="stylesheet" href="/assets/css/style.css" />
+  <style>
+    .upload-wrap { max-width: 680px; margin: 0 auto; }
+
+    .dropzone {
+      border: 2px dashed var(--border-dark);
+      border-radius: 12px;
+      background: var(--white);
+      padding: 2.5rem 1.5rem;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .dropzone:hover,
+    .dropzone.dragover {
+      border-color: var(--green-primary);
+      background: var(--green-tint);
+    }
+    .dropzone-icon {
+      font-size: 2.6rem;
+      line-height: 1;
+      margin-bottom: 0.75rem;
+    }
+    .dropzone-title {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--text-dark);
+      margin-bottom: 4px;
+    }
+    .dropzone-hint { font-size: 14px; color: var(--text-muted); }
+
+    .file-list { margin-top: 1.5rem; display: flex; flex-direction: column; gap: 10px; }
+    .file-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 14px;
+    }
+    .file-row .fname {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--text-dark);
+    }
+    .file-row .fsize { color: var(--text-light); font-size: 12px; white-space: nowrap; }
+    .file-row .fstatus { font-size: 12px; font-weight: 600; white-space: nowrap; }
+    .fstatus.pending  { color: var(--text-light); }
+    .fstatus.uploading{ color: var(--green-mid); }
+    .fstatus.done     { color: var(--green-primary); }
+    .fstatus.error    { color: #b3261e; }
+    .file-row .fremove {
+      background: none; border: none; cursor: pointer;
+      color: var(--text-light); font-size: 18px; line-height: 1; padding: 0 4px;
+    }
+    .file-row .fremove:hover { color: #b3261e; }
+
+    .progress-track {
+      height: 4px; background: var(--border); border-radius: 2px;
+      overflow: hidden; margin-top: 6px; width: 100%;
+    }
+    .progress-bar { height: 100%; width: 0; background: var(--green-light); transition: width 0.2s; }
+
+    .upload-note {
+      font-size: 13px; color: var(--text-muted);
+      background: var(--green-tint); border-radius: 8px;
+      padding: 12px 14px; margin-top: 1.25rem;
+    }
+    .banner {
+      border-radius: 8px; padding: 12px 14px; font-size: 14px; margin-bottom: 1.25rem;
+    }
+    .banner.warn  { background: #fff4e5; color: #8a5300; border: 1px solid #ffd8a8; }
+    .banner.ok    { background: var(--green-tint); color: var(--green-dark); border: 1px solid var(--green-muted); }
+    .banner.err   { background: #fdecea; color: #8a1c13; border: 1px solid #f5c6c0; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <div class="nav-inner">
+    <a href="/index.html" class="nav-brand"><img src="/assets/logo.webp" alt="GCCC Logo" style="height: 44px; width: auto; display: block;" />
+      <div class="nav-brand-text">
+        <span class="nav-brand-call">GCCC</span>
+        <span class="nav-brand-name">Gulf Coast Contest Club</span>
+      </div>
+    </a>
+    <button class="nav-toggle" aria-label="Toggle menu" onclick="document.querySelector('.nav-links').classList.toggle('open')">
+      <span></span><span></span><span></span>
+    </button>
+    <ul class="nav-links">
+      <li><a href="/index.html">Home</a></li>
+      <li><a href="/about.html">About</a></li>
+      <li><a href="/calendar.html">Calendar</a></li>
+      <li><a href="/results.html">Results</a></li>
+      <li><a href="/news.html">News</a></li>
+      <li><a href="/photos.html">Photos</a></li>
+      <li><a href="/contact.html">Contact</a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="page-hero">
+  <div class="container">
+    <h1>Share Your Photos &amp; Videos</h1>
+    <p>Upload your shots from GCCC events and operations. Files go straight to the club's shared Drive — you can add, but nothing can be deleted here.</p>
+  </div>
+</div>
+
+<div class="section">
+  <div class="container">
+    <div class="upload-wrap">
+
+      <!-- Shown only if the endpoint hasn't been configured yet -->
+      <div id="notConfigured" class="banner warn hidden">
+        <strong>Uploads aren't switched on yet.</strong> The site owner needs to paste the Apps Script
+        web app URL into this page. See <code>UPLOAD-SETUP.md</code> in the repository for the one-time setup.
+      </div>
+
+      <div id="globalBanner" class="banner ok hidden"></div>
+
+      <div class="section-label">Upload</div>
+      <h2 class="section-title" style="margin-bottom: 0.5rem;">Add to the club photo &amp; video collection</h2>
+      <p style="color: var(--text-muted); margin-bottom: 1.75rem; font-size: 15px;">
+        Pick or drag in your photos and videos, optionally add your name or callsign, then upload.
+      </p>
+
+      <div class="form-group">
+        <label for="uploader">Your name or callsign <span style="color: var(--text-light); font-weight: 400;">(optional)</span></label>
+        <input type="text" id="uploader" name="uploader" placeholder="e.g. NE2CC — John" maxlength="60" />
+      </div>
+
+      <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Choose files to upload">
+        <div class="dropzone-icon">📷🎥</div>
+        <div class="dropzone-title">Tap to choose, or drag files here</div>
+        <div class="dropzone-hint">Photos &amp; videos &middot; you can select several at once</div>
+        <input type="file" id="fileInput" accept="image/*,video/*" multiple class="hidden" />
+      </div>
+
+      <div id="fileList" class="file-list"></div>
+
+      <button id="uploadBtn" type="button" class="btn btn-green hidden"
+              style="width: 100%; padding: 13px; font-size: 15px; margin-top: 1.5rem;">
+        Upload <span id="uploadCount"></span> →
+      </button>
+
+      <div class="upload-note">
+        <strong>A few notes:</strong> Large videos can take a while on slower connections — please keep
+        this tab open until each file shows <em>Done</em>. Files of up to about 35&nbsp;MB each work best;
+        very large videos may need to be compressed or shared another way.
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<footer class="site-footer">
+  <div class="footer-call">GCCC</div>
+  <div class="footer-name">Gulf Coast Contest Club · Redington Beach, Florida</div>
+  <ul class="footer-links">
+    <li><a href="/index.html">Home</a></li>
+    <li><a href="/about.html">About</a></li>
+    <li><a href="/calendar.html">Calendar</a></li>
+    <li><a href="/results.html">Results</a></li>
+    <li><a href="/news.html">News</a></li>
+    <li><a href="/photos.html">Photos</a></li>
+    <li><a href="/contact.html">Contact</a></li>
+  </ul>
+  <div class="footer-copy">73 de NE2CC &nbsp;·&nbsp; &copy; 2026 Gulf Coast Contest Club</div>
+</footer>
+
+<script>
+  /* ============================================================
+     CONFIGURE ME — paste your deployed Apps Script web app URL.
+     It looks like: https://script.google.com/macros/s/AKfy.../exec
+     See UPLOAD-SETUP.md for the one-time setup steps.
+     ============================================================ */
+  var UPLOAD_ENDPOINT = "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
+
+  // ~35 MB raw cap keeps the base64 payload under Apps Script's POST limit.
+  var MAX_BYTES = 35 * 1024 * 1024;
+
+  var dropzone   = document.getElementById('dropzone');
+  var fileInput  = document.getElementById('fileInput');
+  var fileListEl = document.getElementById('fileList');
+  var uploadBtn  = document.getElementById('uploadBtn');
+  var uploadCnt  = document.getElementById('uploadCount');
+  var globalBanner = document.getElementById('globalBanner');
+
+  var queue = []; // { file, row, bar, status, done }
+
+  if (UPLOAD_ENDPOINT === "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE") {
+    document.getElementById('notConfigured').classList.remove('hidden');
+  }
+
+  function fmtSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + ' KB';
+    return (bytes / 1024 / 1024).toFixed(1) + ' MB';
+  }
+
+  function setStatus(item, text, cls) {
+    item.status.textContent = text;
+    item.status.className = 'fstatus ' + cls;
+  }
+
+  function refreshButton() {
+    var remaining = queue.filter(function (q) { return !q.done; }).length;
+    if (remaining > 0) {
+      uploadBtn.classList.remove('hidden');
+      uploadCnt.textContent = remaining + (remaining === 1 ? ' file' : ' files');
+    } else {
+      uploadBtn.classList.add('hidden');
+    }
+  }
+
+  function addFiles(files) {
+    Array.prototype.forEach.call(files, function (file) {
+      var isMedia = /^(image|video)\//.test(file.type) || file.type === '';
+      var tooBig  = file.size > MAX_BYTES;
+
+      var row = document.createElement('div');
+      row.className = 'file-row';
+
+      var info = document.createElement('div');
+      info.style.flex = '1';
+      info.style.minWidth = '0';
+
+      var top = document.createElement('div');
+      top.style.display = 'flex';
+      top.style.gap = '10px';
+      top.style.alignItems = 'baseline';
+
+      var name = document.createElement('span');
+      name.className = 'fname';
+      name.textContent = file.name;
+
+      var size = document.createElement('span');
+      size.className = 'fsize';
+      size.textContent = fmtSize(file.size);
+
+      top.appendChild(name);
+      top.appendChild(size);
+
+      var track = document.createElement('div');
+      track.className = 'progress-track';
+      var bar = document.createElement('div');
+      bar.className = 'progress-bar';
+      track.appendChild(bar);
+
+      info.appendChild(top);
+      info.appendChild(track);
+
+      var status = document.createElement('span');
+      status.className = 'fstatus pending';
+
+      var remove = document.createElement('button');
+      remove.className = 'fremove';
+      remove.type = 'button';
+      remove.innerHTML = '&times;';
+      remove.setAttribute('aria-label', 'Remove ' + file.name);
+
+      row.appendChild(info);
+      row.appendChild(status);
+      row.appendChild(remove);
+      fileListEl.appendChild(row);
+
+      var item = { file: file, row: row, bar: bar, status: status, done: false };
+
+      if (!isMedia) {
+        setStatus(item, 'Not a photo/video', 'error');
+        item.done = true;
+      } else if (tooBig) {
+        setStatus(item, 'Too large (max 35 MB)', 'error');
+        item.done = true;
+      } else {
+        setStatus(item, 'Ready', 'pending');
+      }
+
+      remove.addEventListener('click', function () {
+        var i = queue.indexOf(item);
+        if (i > -1) queue.splice(i, 1);
+        row.remove();
+        refreshButton();
+      });
+
+      queue.push(item);
+    });
+    refreshButton();
+  }
+
+  // Read a File as raw base64 (no data: prefix).
+  function readBase64(file) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function () {
+        var result = reader.result || '';
+        var comma = result.indexOf(',');
+        resolve(comma > -1 ? result.slice(comma + 1) : result);
+      };
+      reader.onerror = function () { reject(reader.error); };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function uploadOne(item, uploader) {
+    return new Promise(function (resolve) {
+      setStatus(item, 'Reading…', 'uploading');
+      readBase64(item.file).then(function (b64) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', UPLOAD_ENDPOINT, true);
+        // text/plain keeps this a "simple" CORS request (no preflight),
+        // which Apps Script web apps handle cleanly.
+        xhr.setRequestHeader('Content-Type', 'text/plain;charset=utf-8');
+
+        xhr.upload.onprogress = function (evt) {
+          if (evt.lengthComputable) {
+            var pct = Math.round((evt.loaded / evt.total) * 100);
+            item.bar.style.width = pct + '%';
+            setStatus(item, 'Uploading ' + pct + '%', 'uploading');
+          }
+        };
+
+        xhr.onload = function () {
+          var ok = false;
+          try { ok = JSON.parse(xhr.responseText).ok === true; } catch (e) { ok = false; }
+          if (xhr.status >= 200 && xhr.status < 300 && ok) {
+            item.bar.style.width = '100%';
+            setStatus(item, 'Done ✓', 'done');
+            item.done = true;
+          } else {
+            setStatus(item, 'Failed — retry', 'error');
+          }
+          resolve();
+        };
+        xhr.onerror = function () {
+          setStatus(item, 'Network error — retry', 'error');
+          resolve();
+        };
+
+        xhr.send(JSON.stringify({
+          filename: item.file.name,
+          mimeType: item.file.type || 'application/octet-stream',
+          uploader: uploader,
+          data: b64
+        }));
+      }).catch(function () {
+        setStatus(item, 'Read error — retry', 'error');
+        resolve();
+      });
+    });
+  }
+
+  uploadBtn.addEventListener('click', function () {
+    if (UPLOAD_ENDPOINT === "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE") {
+      document.getElementById('notConfigured').classList.remove('hidden');
+      return;
+    }
+    var uploader = document.getElementById('uploader').value.trim();
+    var pending = queue.filter(function (q) { return !q.done; });
+    if (!pending.length) return;
+
+    uploadBtn.disabled = true;
+    uploadBtn.textContent = 'Uploading…';
+    globalBanner.classList.add('hidden');
+
+    // Upload sequentially so we don't overwhelm the script or the connection.
+    var chain = Promise.resolve();
+    pending.forEach(function (item) {
+      chain = chain.then(function () { return uploadOne(item, uploader); });
+    });
+
+    chain.then(function () {
+      uploadBtn.disabled = false;
+      uploadBtn.textContent = 'Upload →';
+      refreshButton();
+
+      var failed = queue.filter(function (q) { return !q.done; }).length;
+      var done   = queue.filter(function (q) { return q.done && q.status.textContent.indexOf('Done') === 0; }).length;
+      globalBanner.classList.remove('hidden');
+      if (failed === 0) {
+        globalBanner.className = 'banner ok';
+        globalBanner.innerHTML = '<strong>Thank you!</strong> ' + done +
+          (done === 1 ? ' file was' : ' files were') + ' uploaded to the club Drive. 73!';
+      } else {
+        globalBanner.className = 'banner err';
+        globalBanner.textContent = done + ' uploaded, ' + failed +
+          ' still need attention. Tap Upload again to retry the failed files.';
+      }
+    });
+  });
+
+  // ── Dropzone wiring ──
+  dropzone.addEventListener('click', function () { fileInput.click(); });
+  dropzone.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); }
+  });
+  fileInput.addEventListener('change', function () {
+    addFiles(fileInput.files);
+    fileInput.value = ''; // allow re-selecting the same file
+  });
+  ['dragenter', 'dragover'].forEach(function (ev) {
+    dropzone.addEventListener(ev, function (e) {
+      e.preventDefault(); e.stopPropagation();
+      dropzone.classList.add('dragover');
+    });
+  });
+  ['dragleave', 'drop'].forEach(function (ev) {
+    dropzone.addEventListener(ev, function (e) {
+      e.preventDefault(); e.stopPropagation();
+      dropzone.classList.remove('dragover');
+    });
+  });
+  dropzone.addEventListener('drop', function (e) {
+    if (e.dataTransfer && e.dataTransfer.files) addFiles(e.dataTransfer.files);
+  });
+</script>
+
+</body>
+</html>
