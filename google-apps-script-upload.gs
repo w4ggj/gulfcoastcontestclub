@@ -14,6 +14,12 @@
  *   size limit. The session URL is scoped to that single new file: it cannot
  *   be used to read, list, or delete any other file in the folder.
  *
+ * Why the request comes in as a GET with a "callback":
+ *   An Apps Script web app cannot send the CORS header a browser needs to read
+ *   a normal cross-origin fetch() response. So the page calls this script via
+ *   JSONP instead — a GET request whose result is wrapped in a callback. JSONP
+ *   isn't subject to CORS, so it works reliably from the website.
+ *
  * See UPLOAD-SETUP.md for full deployment instructions.
  */
 
@@ -21,33 +27,51 @@
 var FOLDER_ID = '1gQwqY2Dm41JpdAWlGavz_fResDZ_4xmR';
 
 /**
- * Starts a resumable upload session and returns its one-time URL to the browser.
- * Request body is a JSON string: { filename, mimeType, size, uploader }
+ * The website calls this via JSONP:
+ *   ...exec?callback=FN&filename=...&mimeType=...&size=...&uploader=...
+ * With no "filename", it's just a health check.
  */
+function doGet(e) {
+  var cb = (e && e.parameter && e.parameter.callback) || '';
+  if (!e || !e.parameter || !e.parameter.filename) {
+    return out({ ok: true, status: 'GCCC upload endpoint is running' }, cb);
+  }
+  return out(startSession(e.parameter), cb);
+}
+
+/** Kept so server-side/manual POSTs still work (not used by the browser). */
 function doPost(e) {
   try {
-    if (!e || !e.postData || !e.postData.contents) {
-      return jsonOut({ ok: false, error: 'No data received.' });
-    }
+    var body = (e && e.postData && e.postData.contents) ? JSON.parse(e.postData.contents) : {};
+    return out(startSession(body), '');
+  } catch (err) {
+    return out({ ok: false, error: String(err) }, '');
+  }
+}
 
-    var body = JSON.parse(e.postData.contents);
+/**
+ * Starts a Drive resumable upload session and returns its one-time URL.
+ * Input: { filename, mimeType, size, uploader }
+ */
+function startSession(p) {
+  try {
+    if (!p || !p.filename) return { ok: false, error: 'Missing filename.' };
 
-    // Touching DriveApp here validates the folder AND ensures this script is
+    // Touching DriveApp validates the folder AND ensures this script is
     // authorized with the Drive scope, so the OAuth token below works.
     var folder = DriveApp.getFolderById(FOLDER_ID);
 
     // Build a tidy, collision-resistant filename:
     //   [optional uploader] original-name (yyyy-MM-dd HHmmss).ext
     var stamp    = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HHmmss');
-    var original = sanitize(body.filename || 'upload');
-    var uploader = body.uploader ? sanitize(body.uploader) + ' - ' : '';
+    var original = sanitize(p.filename);
+    var uploader = p.uploader ? sanitize(p.uploader) + ' - ' : '';
     var dot      = original.lastIndexOf('.');
     var base     = dot > 0 ? original.slice(0, dot) : original;
     var ext      = dot > 0 ? original.slice(dot)    : '';
     var finalName = uploader + base + ' (' + stamp + ')' + ext;
 
-    var mimeType = body.mimeType || 'application/octet-stream';
-
+    var mimeType = p.mimeType || 'application/octet-stream';
     var metadata = { name: finalName, parents: [folder.getId()] };
 
     var initUrl = 'https://www.googleapis.com/upload/drive/v3/files'
@@ -59,7 +83,7 @@ function doPost(e) {
       headers: {
         'Authorization': 'Bearer ' + ScriptApp.getOAuthToken(),
         'X-Upload-Content-Type': mimeType,
-        'X-Upload-Content-Length': String(body.size || '')
+        'X-Upload-Content-Length': String(p.size || '')
       },
       payload: JSON.stringify(metadata),
       muteHttpExceptions: true
@@ -67,27 +91,17 @@ function doPost(e) {
 
     var code = res.getResponseCode();
     if (code < 200 || code >= 300) {
-      return jsonOut({ ok: false, error: 'Could not start upload (HTTP ' + code + '): ' + res.getContentText().slice(0, 300) });
+      return { ok: false, error: 'Could not start upload (HTTP ' + code + '): ' + res.getContentText().slice(0, 200) };
     }
 
     var headers = res.getAllHeaders();
     var uploadUrl = headers['Location'] || headers['location'];
-    if (!uploadUrl) {
-      return jsonOut({ ok: false, error: 'No upload session URL returned by Drive.' });
-    }
+    if (!uploadUrl) return { ok: false, error: 'No upload session URL returned by Drive.' };
 
-    return jsonOut({ ok: true, uploadUrl: uploadUrl, name: finalName });
+    return { ok: true, uploadUrl: uploadUrl, name: finalName };
   } catch (err) {
-    return jsonOut({ ok: false, error: String(err) });
+    return { ok: false, error: String(err) };
   }
-}
-
-/**
- * Open the web app URL in a browser to confirm the deployment is live —
- * you should see {"ok":true,"status":"GCCC upload endpoint is running"}.
- */
-function doGet() {
-  return jsonOut({ ok: true, status: 'GCCC upload endpoint is running' });
 }
 
 // Strip characters that don't belong in a Drive filename.
@@ -95,8 +109,15 @@ function sanitize(name) {
   return String(name).replace(/[\\\/:*?"<>|]+/g, '_').slice(0, 120).trim();
 }
 
-function jsonOut(obj) {
+// Return JSONP (callback-wrapped) when a callback is given, else plain JSON.
+function out(obj, cb) {
+  var json = JSON.stringify(obj);
+  if (cb) {
+    return ContentService
+      .createTextOutput(cb + '(' + json + ');')
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
   return ContentService
-    .createTextOutput(JSON.stringify(obj))
+    .createTextOutput(json)
     .setMimeType(ContentService.MimeType.JSON);
 }
