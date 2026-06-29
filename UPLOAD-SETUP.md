@@ -38,6 +38,31 @@ directly with the people you want to be able to upload.
      target folder, update that one line.
 4. Click the **Save** icon (give the project a name like *GCCC Uploads*).
 
+### 1a. Declare the OAuth scopes (required)
+The resumable upload calls the Drive API directly, so the script must be granted
+the **Drive** and **external request** scopes explicitly — otherwise Drive
+rejects the upload with `403 insufficient authentication scopes`.
+
+1. In the Apps Script editor, click **Project Settings** (⚙ on the left).
+2. Tick **“Show ‘appsscript.json’ manifest file in the editor.”**
+3. Open the **`appsscript.json`** file that now appears in the editor and make
+   sure it contains an `oauthScopes` array with these two entries (copy from
+   `appsscript.json` in this repo):
+   ```json
+   "oauthScopes": [
+     "https://www.googleapis.com/auth/drive",
+     "https://www.googleapis.com/auth/script.external_request"
+   ]
+   ```
+4. **Save.**
+5. Re-authorize: in the editor, choose the **`authorizeOnce`** function in the
+   toolbar dropdown and click **Run**. Approve the new permissions when prompted
+   (again, click **Advanced ▸ Go to … (unsafe)** if you see the unverified-app
+   screen). You should see `Authorized OK` in the execution log.
+
+> If you change scopes later, you must re-run `authorizeOnce` **and** redeploy a
+> new version for the change to take effect.
+
 ### 2. Deploy it as a web app
 1. Click **Deploy ▸ New deployment**.
 2. Click the gear ⚙ next to "Select type" and choose **Web app**.
