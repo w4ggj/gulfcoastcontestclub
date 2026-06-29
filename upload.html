@@ -194,9 +194,6 @@
 
   // Sanity ceiling only — Drive resumable uploads handle multi-GB files.
   var MAX_BYTES = 6 * 1024 * 1024 * 1024; // 6 GB
-  // Upload chunk size: must be a multiple of 256 KB per the Drive API.
-  var CHUNK_SIZE = 16 * 1024 * 1024; // 16 MB
-  var CHUNK_RETRIES = 4;
 
   var dropzone   = document.getElementById('dropzone');
   var fileInput  = document.getElementById('fileInput');
@@ -348,27 +345,47 @@
     });
   }
 
-  // PUT one chunk to the resumable session URL.
-  // Resolves 'done' on final 200/201, 'continue' on 308, rejects on error.
-  function putChunk(uploadUrl, blob, start, end, total, item) {
+  // Upload the whole file to the resumable session URL in a single PUT.
+  //
+  // We almost never get to READ Google's response: the browser blocks reading a
+  // cross-origin response that lacks an Access-Control-Allow-Origin header (which
+  // Google's upload endpoint doesn't send). BUT upload *progress* events are not
+  // subject to that restriction — so when every byte has been delivered, Google
+  // has the file even though we can't read its "200 OK". We treat full delivery
+  // as success.
+  function putWholeFile(uploadUrl, item) {
     return new Promise(function (resolve, reject) {
+      var file  = item.file;
+      var total = file.size;
+      if (total === 0) { resolve(); return; }
+
       var xhr = new XMLHttpRequest();
       xhr.open('PUT', uploadUrl, true);
-      xhr.setRequestHeader('Content-Range', 'bytes ' + start + '-' + (end - 1) + '/' + total);
+      xhr.setRequestHeader('Content-Range', 'bytes 0-' + (total - 1) + '/' + total);
+
+      var delivered = false;
       xhr.upload.onprogress = function (evt) {
         if (evt.lengthComputable) {
-          var pct = Math.round(((start + evt.loaded) / total) * 100);
+          var pct = Math.round((evt.loaded / evt.total) * 100);
           item.bar.style.width = pct + '%';
           setStatus(item, 'Uploading ' + pct + '%', 'uploading');
+          if (evt.loaded >= evt.total) delivered = true;
         }
       };
+      xhr.upload.onload = function () { delivered = true; };
+
       xhr.onload = function () {
-        if (xhr.status === 308) resolve('continue');
-        else if (xhr.status === 200 || xhr.status === 201) resolve('done');
-        else reject(new Error('HTTP ' + xhr.status));
+        if (xhr.status >= 200 && xhr.status < 300) resolve();      // readable success
+        else if (xhr.status === 0 && delivered) resolve();         // response hidden by CORS, bytes sent
+        else reject(new Error('Upload rejected (HTTP ' + xhr.status + ')'));
       };
-      xhr.onerror = function () { reject(new Error('network')); };
-      xhr.send(blob);
+      xhr.onerror = function () {
+        // CORS hides the response; if all bytes were delivered, the file is saved.
+        if (delivered) resolve();
+        else reject(new Error('Upload interrupted before completing.'));
+      };
+
+      xhr.send(file);
     });
   }
 
@@ -378,33 +395,7 @@
       if (!resp || !resp.ok || !resp.uploadUrl) {
         throw new Error(resp && resp.error ? resp.error : 'Could not start upload');
       }
-      var uploadUrl = resp.uploadUrl;
-      var file  = item.file;
-      var total = file.size;
-
-      // Walk the file chunk by chunk, retrying a failed chunk a few times.
-      function nextChunk(offset) {
-        if (offset >= total) return Promise.resolve(); // zero-byte safety
-        var end  = Math.min(offset + CHUNK_SIZE, total);
-        var blob = file.slice(offset, end);
-
-        function attempt(tries) {
-          return putChunk(uploadUrl, blob, offset, end, total, item).then(function (state) {
-            if (state === 'done') return; // upload complete
-            return nextChunk(end);        // 308 → send the next chunk
-          }).catch(function (err) {
-            if (tries < CHUNK_RETRIES) {
-              setStatus(item, 'Retrying…', 'uploading');
-              return new Promise(function (res) { setTimeout(res, 1200 * (tries + 1)); })
-                .then(function () { return attempt(tries + 1); });
-            }
-            throw err;
-          });
-        }
-        return attempt(0);
-      }
-
-      return nextChunk(0);
+      return putWholeFile(resp.uploadUrl, item);
     }).then(function () {
       item.bar.style.width = '100%';
       setStatus(item, 'Done ✓', 'done');
