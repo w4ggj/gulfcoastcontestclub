@@ -23,8 +23,13 @@
  * See UPLOAD-SETUP.md for full deployment instructions.
  */
 
-// The shared Drive folder that uploads land in (the folder ID from your link).
+// The private "staging" folder that uploads land in (the folder ID from your link).
 var FOLDER_ID = '1gQwqY2Dm41JpdAWlGavz_fResDZ_4xmR';
+
+// The public, view-only folder that processed uploads are moved into.
+// Share this folder as "Anyone with the link → Viewer" so the public can view
+// (but not delete) the media. This is the folder behind the "viewable at" link.
+var VIEW_FOLDER_ID = '1qww1Wv_q7k_54vSD39hi9y-gkMg8bhcm';
 
 /**
  * The website calls this via JSONP:
@@ -117,6 +122,36 @@ function authorizeOnce() {
     muteHttpExceptions: true
   });
   Logger.log('Authorized OK');
+}
+
+/**
+ * Background mover. Moves every file from the private upload (staging) folder
+ * into the public view-only folder, so processed media becomes viewable.
+ *
+ * Set this to run automatically on a schedule:
+ *   In the Apps Script editor, click the clock icon (Triggers) ▸ Add Trigger ▸
+ *   Function: processUploads, Event source: Time-driven, Minutes timer:
+ *   "Every 5 minutes" ▸ Save. (See UPLOAD-SETUP.md.)
+ *
+ * Files inherit the destination folder's "Anyone with link → Viewer" sharing,
+ * so the public can view them but not delete them.
+ */
+function processUploads() {
+  var src = DriveApp.getFolderById(FOLDER_ID);
+  var dst = DriveApp.getFolderById(VIEW_FOLDER_ID);
+  var files = src.getFiles();
+  var moved = 0;
+  while (files.hasNext()) {
+    var f = files.next();
+    try {
+      f.moveTo(dst);   // remove from staging, add to the public view folder
+      moved++;
+    } catch (err) {
+      Logger.log('Could not move "' + f.getName() + '": ' + err);
+    }
+  }
+  Logger.log('processUploads moved ' + moved + ' file(s).');
+  return moved;
 }
 
 // Strip characters that don't belong in a Drive filename.

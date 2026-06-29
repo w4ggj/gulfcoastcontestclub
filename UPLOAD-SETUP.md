@@ -97,6 +97,42 @@ rejects the upload with `403 insufficient authentication scopes`.
 
 ---
 
+## 4. Auto-publish uploads to a view-only gallery (optional)
+
+Uploads first land in your **private staging folder** (`FOLDER_ID`). A background
+job then moves them into a **public, view-only folder** so members can browse the
+media — without being able to delete anything. After a successful upload the page
+tells the visitor their files "will be viewable in a few minutes at" that folder.
+
+**a. Create & share the view folder**
+1. In Google Drive, create a folder (e.g. *GCCC Event Media*).
+2. **Share** → General access → **Anyone with the link** → role **Viewer**. *(Viewer,
+   not Editor — this is what makes it view-only: people can see and download, but
+   not delete or change anything.)*
+3. Copy its **folder ID** (the part of the URL after `/folders/`) and its **share link**.
+
+**b. Point the script and page at it**
+- In `google-apps-script-upload.gs`, set `VIEW_FOLDER_ID` to the view folder's ID.
+- In `upload.html`, set `VIEW_FOLDER_URL` to the view folder's share link.
+  *(Both are already filled in for the current folder — only change them if you
+  use a different folder.)*
+
+**c. Run the mover on a schedule**
+1. In the Apps Script editor, click the **clock icon (Triggers)** on the left.
+2. **+ Add Trigger** → Function: **`processUploads`** · Event source: **Time-driven**
+   · Type: **Minutes timer** · **Every 5 minutes** → **Save**.
+3. Approve permissions if prompted. From now on, anything uploaded is moved to the
+   public view folder within ~5 minutes.
+
+> Want to review media before it goes public? Just **don't** add the trigger —
+> instead run `processUploads` yourself (or move files in Drive by hand) whenever
+> you're ready to publish a batch.
+
+> Keep the **staging** folder (`FOLDER_ID`) private. Only the **view** folder is
+> shared publicly — and only as **Viewer**, so the public can't delete anything.
+
+---
+
 ## How it works (and why visitors can't delete anything)
 
 - When a visitor picks a file, the page POSTs only its **name, type, and size**
