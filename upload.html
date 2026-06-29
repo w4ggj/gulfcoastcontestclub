@@ -410,9 +410,10 @@
       setStatus(item, 'Done ✓', 'done');
       item.done = true;
     }).catch(function (err) {
+      var msg = String(err && err.message ? err.message : err);
       setStatus(item, 'Failed — retry', 'error');
-      // Surface the reason in a tooltip for debugging.
-      item.status.title = String(err && err.message ? err.message : err);
+      item.status.title = msg;   // tooltip
+      item.errorMsg = msg;       // surfaced in the summary banner
     });
   }
 
@@ -449,8 +450,12 @@
           (done === 1 ? ' file was' : ' files were') + ' uploaded to the club Drive. 73!';
       } else {
         globalBanner.className = 'banner err';
-        globalBanner.textContent = done + ' uploaded, ' + failed +
-          ' still need attention. Tap Upload again to retry the failed files.';
+        var reasons = queue.filter(function (q) { return q.errorMsg; })
+                           .map(function (q) { return q.file.name + ': ' + q.errorMsg; });
+        globalBanner.innerHTML = '<strong>' + done + ' uploaded, ' + failed +
+          ' still need attention.</strong> Tap Upload again to retry.' +
+          (reasons.length ? '<br><span style="font-size:12px;">Reason — ' +
+            reasons.join('<br>') + '</span>' : '');
       }
     });
   });
