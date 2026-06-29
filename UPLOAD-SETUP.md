@@ -1,6 +1,6 @@
 # Visitor Upload Page — Setup Guide
 
-This repo includes an **unlisted** page, `upload.html`, that lets visitors upload
+This repo includes an **unlisted** page at `/upload` (the file `upload/index.html`) that lets visitors upload
 photos and videos straight into the club's shared Google Drive folder. Visitors
 can **add** files but have **no way to view, list, or delete** anything in the
 folder — they only ever talk to a small Google Apps Script endpoint that *only
@@ -8,7 +8,7 @@ creates* files.
 
 Because GitHub Pages is static (no server), the saving-to-Drive is brokered by a
 free Google Apps Script "web app" that runs as **you** (the folder owner). You
-deploy it once, paste its URL into `upload.html`, and you're done.
+deploy it once, paste its URL into `upload/index.html`, and you're done.
 
 **Large files (1 GB+ videos) are supported.** The script never receives the file
 itself — it asks Google Drive to open a *resumable upload session* and hands the
@@ -17,7 +17,7 @@ to Google's upload servers** in chunks, so there's no practical size limit and a
 brief network hiccup won't always restart the upload. That one-time URL can only
 add the single new file; it can't read, list, or delete anything.
 
-- **Upload page:** `upload.html` → lives at `https://gulfcoastcontestclub.org/upload.html`
+- **Upload page:** `upload/index.html` → lives at `https://gulfcoastcontestclub.org/upload`
 - **Target Drive folder:** `1gQwqY2Dm41JpdAWlGavz_fResDZ_4xmR`
 - **The script:** `google-apps-script-upload.gs`
 
@@ -84,7 +84,7 @@ rejects the upload with `403 insufficient authentication scopes`.
 > `{"ok":true,"status":"GCCC upload endpoint is running"}`.
 
 ### 3. Connect the page to your script
-1. Open `upload.html` in this repo.
+1. Open `upload/index.html` in this repo.
 2. Near the bottom, find this line:
    ```js
    var UPLOAD_ENDPOINT = "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
@@ -94,6 +94,42 @@ rejects the upload with `403 insufficient authentication scopes`.
    var UPLOAD_ENDPOINT = "https://script.google.com/macros/s/AKfy............/exec";
    ```
 4. Commit and push. Within a minute or two the live page will accept uploads.
+
+---
+
+## 4. Auto-publish uploads to a view-only gallery (optional)
+
+Uploads first land in your **private staging folder** (`FOLDER_ID`). A background
+job then moves them into a **public, view-only folder** so members can browse the
+media — without being able to delete anything. After a successful upload the page
+tells the visitor their files "will be viewable in a few minutes at" that folder.
+
+**a. Create & share the view folder**
+1. In Google Drive, create a folder (e.g. *GCCC Event Media*).
+2. **Share** → General access → **Anyone with the link** → role **Viewer**. *(Viewer,
+   not Editor — this is what makes it view-only: people can see and download, but
+   not delete or change anything.)*
+3. Copy its **folder ID** (the part of the URL after `/folders/`) and its **share link**.
+
+**b. Point the script and page at it**
+- In `google-apps-script-upload.gs`, set `VIEW_FOLDER_ID` to the view folder's ID.
+- In `upload/index.html`, set `VIEW_FOLDER_URL` to the view folder's share link.
+  *(Both are already filled in for the current folder — only change them if you
+  use a different folder.)*
+
+**c. Run the mover on a schedule**
+1. In the Apps Script editor, click the **clock icon (Triggers)** on the left.
+2. **+ Add Trigger** → Function: **`processUploads`** · Event source: **Time-driven**
+   · Type: **Minutes timer** · **Every 5 minutes** → **Save**.
+3. Approve permissions if prompted. From now on, anything uploaded is moved to the
+   public view folder within ~5 minutes.
+
+> Want to review media before it goes public? Just **don't** add the trigger —
+> instead run `processUploads` yourself (or move files in Drive by hand) whenever
+> you're ready to publish a batch.
+
+> Keep the **staging** folder (`FOLDER_ID`) private. Only the **view** folder is
+> shared publicly — and only as **Viewer**, so the public can't delete anything.
 
 ---
 
@@ -125,5 +161,5 @@ rejects the upload with `403 insufficient authentication scopes`.
   anything and you can see who sent what.
 - **Updating the script later:** after editing the `.gs` code, do
   **Deploy ▸ Manage deployments ▸ (edit) ▸ Version: New version ▸ Deploy**. The
-  URL stays the same, so you don't need to touch `upload.html` again.
+  URL stays the same, so you don't need to touch `upload/index.html` again.
 - **Cost:** free, within normal Google quotas.

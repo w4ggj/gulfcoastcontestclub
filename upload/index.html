@@ -88,6 +88,38 @@
     .banner.ok    { background: var(--green-tint); color: var(--green-dark); border: 1px solid var(--green-muted); }
     .banner.err   { background: #fdecea; color: #8a1c13; border: 1px solid #f5c6c0; }
     .hidden { display: none; }
+
+    .thumb-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+      gap: 8px;
+      margin-bottom: 1.25rem;
+    }
+    .thumb {
+      position: relative;
+      aspect-ratio: 1 / 1;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #111;
+      border: 1px solid var(--border);
+    }
+    .thumb img, .thumb video {
+      width: 100%; height: 100%; object-fit: cover; display: block;
+    }
+    .thumb.video-tile {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 4px; background: var(--green-dark); color: #fff; padding: 6px;
+    }
+    .thumb.video-tile .vt-icon { font-size: 1.6rem; line-height: 1; }
+    .thumb.video-tile .vt-name {
+      font-size: 10px; line-height: 1.2; text-align: center;
+      max-width: 100%; overflow: hidden; text-overflow: ellipsis;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    }
+    .thumb .play-badge {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 1.8rem; text-shadow: 0 1px 4px rgba(0,0,0,0.6); pointer-events: none;
+    }
   </style>
 </head>
 <body>
@@ -133,6 +165,7 @@
       </div>
 
       <div id="globalBanner" class="banner ok hidden"></div>
+      <div id="thumbs" class="thumb-grid"></div>
 
       <div class="section-label">Upload</div>
       <h2 class="section-title" style="margin-bottom: 0.5rem;">Add to the club photo &amp; video collection</h2>
@@ -192,6 +225,12 @@
      ============================================================ */
   var UPLOAD_ENDPOINT = "https://script.google.com/macros/s/AKfycbyU4fIMdRrif6kpXaLV9KXti9_GRTrry21rVUpx6fX6LIwxO6yMsb2AQBpNL8RQazp1/exec";
 
+  /* Public, view-only Drive folder where uploads appear after processing.
+     Paste the SHARE LINK of your view folder (Anyone with link → Viewer).
+     Leave as-is to hide the "viewable at" link until you set it up.
+     See UPLOAD-SETUP.md. */
+  var VIEW_FOLDER_URL = "https://drive.google.com/drive/folders/1qww1Wv_q7k_54vSD39hi9y-gkMg8bhcm?usp=sharing";
+
   // Sanity ceiling only — Drive resumable uploads handle multi-GB files.
   var MAX_BYTES = 6 * 1024 * 1024 * 1024; // 6 GB
 
@@ -201,6 +240,7 @@
   var uploadBtn  = document.getElementById('uploadBtn');
   var uploadCnt  = document.getElementById('uploadCount');
   var globalBanner = document.getElementById('globalBanner');
+  var thumbsEl     = document.getElementById('thumbs');
 
   var queue = []; // { file, row, bar, status, done }
 
@@ -408,6 +448,45 @@
     });
   }
 
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  // Build a thumbnail tile from the local file the visitor just uploaded.
+  function renderThumb(item) {
+    var file = item.file;
+    var tile = document.createElement('div');
+    tile.className = 'thumb';
+
+    if (/^image\//.test(file.type)) {
+      var img = document.createElement('img');
+      img.alt = file.name;
+      img.src = URL.createObjectURL(file);
+      tile.appendChild(img);
+    } else if (/^video\//.test(file.type)) {
+      var v = document.createElement('video');
+      v.muted = true; v.playsInline = true; v.preload = 'metadata';
+      v.src = URL.createObjectURL(file);
+      // Nudge to a frame so the tile isn't just black.
+      v.addEventListener('loadedmetadata', function () {
+        try { v.currentTime = Math.min(0.1, v.duration || 0.1); } catch (e) {}
+      });
+      tile.appendChild(v);
+      var badge = document.createElement('div');
+      badge.className = 'play-badge';
+      badge.textContent = '▶';
+      tile.appendChild(badge);
+    } else {
+      tile.className = 'thumb video-tile';
+      var icon = document.createElement('div'); icon.className = 'vt-icon'; icon.textContent = '📄';
+      var nm = document.createElement('div'); nm.className = 'vt-name'; nm.textContent = file.name;
+      tile.appendChild(icon); tile.appendChild(nm);
+    }
+    thumbsEl.appendChild(tile);
+  }
+
   uploadBtn.addEventListener('click', function () {
     if (UPLOAD_ENDPOINT === "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE") {
       document.getElementById('notConfigured').classList.remove('hidden');
@@ -429,6 +508,7 @@
     uploadBtn.disabled = true;
     uploadBtn.textContent = 'Uploading…';
     globalBanner.classList.add('hidden');
+    thumbsEl.innerHTML = '';
 
     // Upload sequentially so we don't overwhelm the script or the connection.
     var chain = Promise.resolve();
@@ -442,16 +522,33 @@
       refreshButton();
 
       var failed = queue.filter(function (q) { return !q.done; }).length;
-      var done   = queue.filter(function (q) { return q.done && q.status.textContent.indexOf('Done') === 0; }).length;
+      var succeeded = pending.filter(function (q) {
+        return q.done && q.status.textContent.indexOf('Done') === 0;
+      });
+      var done = succeeded.length;
+
+      // Thumbnails of what was just uploaded.
+      succeeded.forEach(renderThumb);
+
+      var viewSet = VIEW_FOLDER_URL && VIEW_FOLDER_URL.indexOf('PASTE_') !== 0;
+      var who = uploader ? ', ' + escapeHtml(uploader) : '';
+      var noun = done === 1 ? 'photo/video is' : 'photos/videos are';
+
       globalBanner.classList.remove('hidden');
       if (failed === 0) {
         globalBanner.className = 'banner ok';
-        globalBanner.innerHTML = '<strong>Thank you!</strong> ' + done +
-          (done === 1 ? ' file was' : ' files were') + ' uploaded to the club Drive. 73!';
+        if (viewSet) {
+          globalBanner.innerHTML = '<strong>Thank you' + who + '!</strong> Your ' + done + ' ' + noun +
+            ' processing and will be viewable in a few minutes at ' +
+            '<a href="' + VIEW_FOLDER_URL + '" target="_blank" rel="noopener">the club photo &amp; video gallery</a>. 73!';
+        } else {
+          globalBanner.innerHTML = '<strong>Thank you' + who + '!</strong> Your ' + done + ' ' + noun +
+            ' uploaded to the club Drive. 73!';
+        }
       } else {
         globalBanner.className = 'banner err';
         var reasons = queue.filter(function (q) { return q.errorMsg; })
-                           .map(function (q) { return q.file.name + ': ' + q.errorMsg; });
+                           .map(function (q) { return escapeHtml(q.file.name + ': ' + q.errorMsg); });
         globalBanner.innerHTML = '<strong>' + done + ' uploaded, ' + failed +
           ' still need attention.</strong> Tap Upload again to retry.' +
           (reasons.length ? '<br><span style="font-size:12px;">Reason — ' +
