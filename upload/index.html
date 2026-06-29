@@ -539,8 +539,11 @@
         globalBanner.className = 'banner ok';
         if (viewSet) {
           globalBanner.innerHTML = '<strong>Thank you' + who + '!</strong> Your ' + done + ' ' + noun +
-            ' processing and will be viewable in a few minutes at ' +
-            '<a href="' + VIEW_FOLDER_URL + '" target="_blank" rel="noopener">the club photo &amp; video gallery</a>. 73!';
+            ' processing and will be viewable in a few minutes. 73!' +
+            '<div style="margin-top: 12px;">' +
+            '<a href="' + VIEW_FOLDER_URL + '" target="_blank" rel="noopener" class="btn btn-green" ' +
+            'style="display: inline-block; padding: 11px 20px; font-size: 15px;">📸 View the club gallery →</a>' +
+            '</div>';
         } else {
           globalBanner.innerHTML = '<strong>Thank you' + who + '!</strong> Your ' + done + ' ' + noun +
             ' uploaded to the club Drive. 73!';
