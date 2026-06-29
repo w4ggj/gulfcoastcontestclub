@@ -137,12 +137,12 @@
       <div class="section-label">Upload</div>
       <h2 class="section-title" style="margin-bottom: 0.5rem;">Add to the club photo &amp; video collection</h2>
       <p style="color: var(--text-muted); margin-bottom: 1.75rem; font-size: 15px;">
-        Pick or drag in your photos and videos, optionally add your callsign, then upload.
+        Enter your callsign, pick or drag in your photos and videos, then upload.
       </p>
 
       <div class="form-group">
-        <label for="uploader">Callsign <span style="color: var(--text-light); font-weight: 400;">(optional)</span></label>
-        <input type="text" id="uploader" name="uploader" placeholder="e.g. NE2CC" maxlength="20" />
+        <label for="uploader">Your callsign <span style="color: #b3261e; font-weight: 600;">*</span></label>
+        <input type="text" id="uploader" name="uploader" placeholder="e.g. W4ABC (your own call, not NE2CC)" maxlength="20" required />
       </div>
 
       <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Choose files to upload">
@@ -413,7 +413,16 @@
       document.getElementById('notConfigured').classList.remove('hidden');
       return;
     }
-    var uploader = document.getElementById('uploader').value.trim();
+    var uploaderEl = document.getElementById('uploader');
+    var uploader = uploaderEl.value.trim();
+    if (!uploader) {
+      globalBanner.className = 'banner err';
+      globalBanner.classList.remove('hidden');
+      globalBanner.innerHTML = '<strong>Please enter your callsign</strong> before uploading, so we know who sent the files.';
+      uploaderEl.focus();
+      return;
+    }
+
     var pending = queue.filter(function (q) { return !q.done; });
     if (!pending.length) return;
 
