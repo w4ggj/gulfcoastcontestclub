@@ -104,6 +104,21 @@ function startSession(p) {
   }
 }
 
+/**
+ * Run this ONCE from the Apps Script editor (select authorizeOnce, click Run)
+ * after adding the OAuth scopes to the manifest. It forces Google to show the
+ * re-authorization prompt for the Drive + external-request scopes the resumable
+ * upload needs. You should see "Authorized OK" in the execution log.
+ */
+function authorizeOnce() {
+  DriveApp.getFolderById(FOLDER_ID).getName();
+  UrlFetchApp.fetch('https://www.googleapis.com/drive/v3/about?fields=user', {
+    headers: { 'Authorization': 'Bearer ' + ScriptApp.getOAuthToken() },
+    muteHttpExceptions: true
+  });
+  Logger.log('Authorized OK');
+}
+
 // Strip characters that don't belong in a Drive filename.
 function sanitize(name) {
   return String(name).replace(/[\\\/:*?"<>|]+/g, '_').slice(0, 120).trim();
