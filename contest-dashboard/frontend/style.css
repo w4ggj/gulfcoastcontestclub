@@ -568,3 +568,13 @@ select.form-input { appearance: none; cursor: pointer; }
 
 /* Utility */
 .hidden { display: none !important; }
+
+/* Tava One credit */
+.tava-credit {
+  text-align: center;
+  font-size: 0.72rem;
+  padding: 6px;
+  color: var(--text-muted);
+}
+.tava-credit a { color: inherit; text-decoration: none; border-bottom: 1px solid currentColor; }
+.tava-credit a:hover { opacity: 0.8; }
