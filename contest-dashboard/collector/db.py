@@ -277,6 +277,11 @@ def get_live_stats(conn: sqlite3.Connection, contest_id: int) -> dict:
         AND qso_utc >= strftime('%Y-%m-%dT%H:%M:%SZ', 'now', '-1 hour')
     """, (contest_id,)).fetchone()["n"]
 
+    recent = conn.execute(f"""
+        SELECT call, operator, band, mode, qso_utc
+        {base} ORDER BY qso_utc DESC LIMIT 20
+    """, (contest_id,)).fetchall()
+
     return {
         "total_qsos": total,
         "rate_1h":    rate_1h,
@@ -284,6 +289,7 @@ def get_live_stats(conn: sqlite3.Connection, contest_id: int) -> dict:
         "operators":  [dict(r) for r in operators],
         "stations":   [dict(r) for r in stations],
         "op_band":    [dict(r) for r in op_band],
+        "recent":     [dict(r) for r in recent],
     }
 
 
