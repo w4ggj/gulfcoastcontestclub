@@ -343,10 +343,6 @@ function renderLeaderboard(operators, opBand) {
       <td class="lb-rank">${medal}</td>
       <td class="lb-op">${esc(op.operator || '?')}</td>
       <td class="lb-qsos">${fmt(op.qsos)}</td>
-      <td class="lb-bands">
-        <div>${esc(bands.join(' · '))}</div>
-        ${bb ? `<div class="lb-band-breakdown">${bb}</div>` : ''}
-      </td>
     </tr>`;
   }).join('');
 }
