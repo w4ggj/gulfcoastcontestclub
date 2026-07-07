@@ -278,10 +278,10 @@
 }
 .lb-subtitle { font-size: 0.9rem; color: var(--dash-text-sub); }
 
-/* Two-column layout: donut left, table right */
+/* Two-column layout: narrow table left, large donut right */
 .lb-body-grid {
   display: grid;
-  grid-template-columns: 280px 1fr;
+  grid-template-columns: 260px 1fr;
   gap: 1rem;
   flex: 1;
   min-height: 0;
@@ -702,13 +702,12 @@ select.form-input { appearance: none; cursor: pointer; }
   min-height: 0;
   padding: 6px 0;
 }
-/* Square box; capped so legend stays visible */
+/* Square box: 45% of the flex row width → legend gets remaining ~55% */
 .donut-circle-wrap {
-  align-self: center;
+  flex: 0 0 45%;
   aspect-ratio: 1 / 1;
-  flex-shrink: 0;
-  max-height: 70%;
-  width: auto;
+  align-self: center;
+  min-width: 0;
 }
 .donut-circle-wrap svg {
   display: block;
