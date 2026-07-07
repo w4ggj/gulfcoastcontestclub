@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contest Stats — Gulf Coast Contest Club</title>
+  <meta name="description" content="Detailed contest statistics for GCCC / NE2CC — QSOs, bands, operators, and rate breakdowns." />
+  <link rel="stylesheet" href="/assets/css/style.css" />
+  <style>
+    /* ── Stats-page extras ────────────────────────────────────────────── */
+    .page-hero {
+      background: var(--green-primary);
+      padding: 3rem 2rem 2.5rem;
+      text-align: center;
+      border-bottom: 3px solid var(--green-light);
+    }
+    .page-hero h1 {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 700;
+      color: var(--white);
+      letter-spacing: 0.02em;
+      margin-bottom: 0.4rem;
+    }
+    .page-hero p { color: rgba(255,255,255,0.72); font-size: 0.95rem; }
+
+    /* Contest selector */
+    .contest-bar {
+      background: var(--green-dark);
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .contest-bar label {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--green-muted);
+      white-space: nowrap;
+    }
+    .contest-select {
+      flex: 1;
+      max-width: 420px;
+      padding: 0.5rem 0.75rem;
+      font-family: 'Barlow', sans-serif;
+      font-size: 0.95rem;
+      background: var(--green-primary);
+      color: var(--white);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .contest-select option { background: var(--green-dark); }
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #aaa;
+      display: inline-block;
+      margin-right: 6px;
+    }
+    .status-dot.live { background: #4ab87a; box-shadow: 0 0 6px #4ab87a; }
+    .status-dot.complete { background: #4a9edd; }
+
+    /* Stat tiles row */
+    .stat-tiles {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .stat-tile {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      text-align: center;
+    }
+    .stat-tile.accent {
+      background: var(--green-primary);
+      border-color: var(--green-mid);
+    }
+    .stat-tile-val {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 2.4rem;
+      font-weight: 900;
+      color: var(--green-primary);
+      line-height: 1;
+    }
+    .stat-tile.accent .stat-tile-val { color: var(--white); }
+    .stat-tile-lbl {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      margin-top: 0.4rem;
+    }
+    .stat-tile.accent .stat-tile-lbl { color: rgba(255,255,255,0.7); }
+
+    /* Two-col grid for charts */
+    .chart-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    @media (max-width: 700px) { .chart-grid { grid-template-columns: 1fr; } }
+
+    .stats-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+    }
+    .stats-card-title {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.6rem;
+      margin-bottom: 1rem;
+    }
+
+    /* SVG donut */
+    .donut-row {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+    .donut-svg-wrap { flex-shrink: 0; width: 140px; height: 140px; }
+    .donut-svg-wrap svg { width: 100%; height: 100%; }
+    .donut-legend { display: flex; flex-direction: column; gap: 5px; }
+    .donut-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+    }
+    .donut-swatch {
+      width: 10px; height: 10px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+    .donut-item-label { color: var(--text-dark); font-weight: 600; }
+    .donut-item-val { color: var(--text-muted); margin-left: auto; padding-left: 1rem; }
+
+    /* Band table */
+    .band-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    .band-table th {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      text-align: left;
+      padding: 0.35rem 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .band-table td { padding: 0.45rem 0.5rem; border-bottom: 1px solid var(--border-dark); }
+    .band-table tr:last-child td { border-bottom: none; }
+    .band-name { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 1.05rem; }
+    .band-bar-cell { width: 40%; }
+    .band-bar-wrap { background: var(--border); border-radius: 3px; height: 10px; }
+    .band-bar-fill { height: 100%; border-radius: 3px; background: var(--green-mid); min-width: 3px; }
+    .band-qso-val { text-align: right; font-weight: 600; color: var(--green-primary); }
+
+    /* Operator leaderboard */
+    .op-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    .op-table th {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      text-align: left;
+      padding: 0.35rem 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .op-table td { padding: 0.5rem; border-bottom: 1px solid var(--border); }
+    .op-table tr:last-child td { border-bottom: none; }
+    .op-rank { color: var(--text-muted); font-size: 0.85rem; width: 2rem; }
+    .op-call { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 1.1rem; }
+    .op-qsos { font-weight: 700; color: var(--green-primary); text-align: right; }
+    .op-bands { color: var(--text-muted); font-size: 0.8rem; }
+    .medal-1 { color: #b8860b; }
+    .medal-2 { color: #888; }
+    .medal-3 { color: #8b4513; }
+
+    /* Hourly rate bars */
+    .rate-chart {
+      display: flex;
+      align-items: flex-end;
+      gap: 4px;
+      height: 100px;
+      padding-bottom: 20px;
+      position: relative;
+    }
+    .rate-bar-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100%;
+      justify-content: flex-end;
+      gap: 2px;
+    }
+    .rate-bar {
+      width: 100%;
+      background: var(--green-mid);
+      border-radius: 2px 2px 0 0;
+      min-height: 2px;
+      transition: height 0.3s ease;
+    }
+    .rate-bar-label {
+      font-size: 9px;
+      color: var(--text-muted);
+      position: absolute;
+      bottom: 0;
+      transform: translateX(-50%);
+      white-space: nowrap;
+    }
+
+    /* Config notice */
+    .config-notice {
+      background: var(--green-tint);
+      border: 1px solid var(--green-muted);
+      border-radius: 8px;
+      padding: 2rem;
+      text-align: center;
+      max-width: 560px;
+      margin: 4rem auto;
+    }
+    .config-notice h2 {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 1.3rem;
+      color: var(--green-primary);
+      margin-bottom: 0.75rem;
+    }
+    .config-notice code {
+      display: block;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.75rem 1rem;
+      font-size: 0.82rem;
+      text-align: left;
+      margin: 1rem 0;
+      color: var(--text-mid);
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .loading { text-align: center; padding: 3rem; color: var(--text-muted); font-style: italic; }
+    .error-msg { color: #c0392b; padding: 1rem; border: 1px solid #f5c6c6; border-radius: 6px; background: #fff5f5; }
+
+    /* Recent QSOs */
+    .recent-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .recent-table th {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      text-align: left;
+      padding: 0.35rem 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .recent-table td { padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--border); }
+    .recent-table tr:last-child td { border-bottom: none; }
+    .recent-call { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; }
+    .recent-band { display: inline-block; background: var(--green-primary); color: white; border-radius: 3px; padding: 1px 5px; font-size: 0.75rem; font-weight: 600; }
+    .recent-mode { color: var(--text-muted); font-size: 0.82rem; }
+    .recent-op { color: var(--text-muted); font-size: 0.82rem; }
+    .recent-time { color: var(--text-light); font-size: 0.78rem; font-variant-numeric: tabular-nums; }
+  </style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <div class="nav-inner">
+    <a href="/index.html" class="nav-brand">
+      <img src="/assets/logo.webp" alt="GCCC Logo" style="height: 44px; width: auto; display: block;" />
+      <div class="nav-brand-text">
+        <span class="nav-brand-call">GCCC</span>
+        <span class="nav-brand-name">Gulf Coast Contest Club</span>
+      </div>
+    </a>
+    <button class="nav-toggle" aria-label="Toggle menu" onclick="document.querySelector('.nav-links').classList.toggle('open')">
+      <span></span><span></span><span></span>
+    </button>
+    <ul class="nav-links">
+      <li><a href="/index.html">Home</a></li>
+      <li><a href="/about.html">About</a></li>
+      <li><a href="/calendar.html">Calendar</a></li>
+      <li><a href="/results.html">Results</a></li>
+      <li><a href="/news.html">News</a></li>
+      <li><a href="/photos.html">Photos</a></li>
+      <li><a href="/stats.html" class="active">Stats</a></li>
+      <li><a href="/contact.html">Contact</a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="page-hero">
+  <h1>Contest Stats</h1>
+  <p>Detailed QSO breakdowns · band distribution · operator leaderboard</p>
+</div>
+
+<div class="contest-bar" id="contest-bar" style="display:none;">
+  <label for="contest-select">Contest</label>
+  <select class="contest-select" id="contest-select" onchange="loadContest(this.value)">
+    <option value="">— select a contest —</option>
+  </select>
+  <span id="contest-status-badge"></span>
+</div>
+
+<div class="container">
+  <div id="app-root">
+    <div class="loading" id="loading-msg">Loading…</div>
+  </div>
+</div>
+
+<footer class="site-footer">
+  <div class="footer-call">GCCC</div>
+  <div class="footer-name">Gulf Coast Contest Club · Reddington Beach, Florida</div>
+  <ul class="footer-links">
+    <li><a href="/index.html">Home</a></li>
+    <li><a href="/about.html">About</a></li>
+    <li><a href="/calendar.html">Calendar</a></li>
+    <li><a href="/results.html">Results</a></li>
+    <li><a href="/news.html">News</a></li>
+    <li><a href="/photos.html">Photos</a></li>
+    <li><a href="/stats.html">Stats</a></li>
+    <li><a href="/contact.html">Contact</a></li>
+  </ul>
+  <div class="footer-copy">73 de NE2CC &nbsp;·&nbsp; &copy; 2025 Gulf Coast Contest Club</div>
+</footer>
+
+<script>
+// ── Configuration ────────────────────────────────────────────────────────────
+// Fill these in once your Supabase project is set up.
+// Use the anon/public key — it only has read access to contest data.
+const SUPABASE_URL      = '';   // e.g. 'https://xxxx.supabase.co'
+const SUPABASE_ANON_KEY = '';   // Project Settings → API → anon public key
+
+// ── Chart palette ─────────────────────────────────────────────────────────────
+const COLORS = [
+  '#226b45','#4ab87a','#e8c040','#4a9edd',
+  '#e05050','#9b59b6','#e67e22','#1abc9c','#c0392b','#2980b9',
+];
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const fmt = n => (n == null ? '—' : Number(n).toLocaleString());
+
+async function sbFetch(path, params = {}) {
+  const url = new URL(SUPABASE_URL + '/rest/v1/' + path);
+  Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+  const res = await fetch(url.toString(), {
+    headers: {
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+      'Accept': 'application/json',
+      'Prefer': 'count=exact',
+    }
+  });
+  if (!res.ok) throw new Error(`Supabase ${res.status}: ${await res.text()}`);
+  return res.json();
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+async function init() {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    $('loading-msg').remove();
+    $('app-root').innerHTML = `
+      <div class="config-notice" style="margin: 3rem auto;">
+        <h2>Supabase not configured</h2>
+        <p>Open <strong>stats.html</strong> and set the two constants at the top of the script:</p>
+        <code>const SUPABASE_URL      = 'https://YOUR-PROJECT.supabase.co';
+const SUPABASE_ANON_KEY = 'your-anon-public-key';</code>
+        <p style="font-size:0.85rem; color:var(--text-muted); margin-top:0.75rem;">
+          Find both values in your Supabase project under<br>
+          <strong>Settings → API → Project URL &amp; anon key</strong>.<br>
+          The anon key is safe to embed — RLS limits it to read-only access.
+        </p>
+      </div>`;
+    return;
+  }
+
+  try {
+    const contests = await sbFetch('contests', {
+      select: 'id,name,contest_type,year,status,started_at,completed_at,station_callsign',
+      order: 'started_at.desc',
+    });
+
+    if (!contests.length) {
+      $('loading-msg').textContent = 'No contests found in database yet.';
+      return;
+    }
+
+    $('loading-msg').remove();
+    const sel = $('contest-select');
+    contests.forEach(c => {
+      const date = c.started_at ? new Date(c.started_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : c.year;
+      const opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = `${c.name} (${date})`;
+      if (c.status === 'live') opt.textContent = '🔴 ' + opt.textContent + ' — LIVE';
+      sel.appendChild(opt);
+    });
+
+    $('contest-bar').style.display = 'flex';
+
+    // Auto-load live contest or most recent
+    const live = contests.find(c => c.status === 'live') || contests[0];
+    sel.value = live.id;
+    await loadContest(live.id, live);
+
+  } catch (e) {
+    $('loading-msg').innerHTML = `<div class="error-msg">Could not connect to Supabase: ${esc(e.message)}</div>`;
+  }
+}
+
+// ── Load one contest ─────────────────────────────────────────────────────────
+async function loadContest(contestId, meta) {
+  if (!contestId) return;
+  const root = $('app-root');
+  root.innerHTML = '<div class="loading" style="padding:3rem;">Loading contest data…</div>';
+
+  try {
+    // Fetch contest meta if not passed
+    if (!meta) {
+      const rows = await sbFetch(`contests?id=eq.${contestId}&select=*`);
+      meta = rows[0];
+    }
+
+    // Update status badge
+    const badge = $('contest-status-badge');
+    if (meta.status === 'live') {
+      badge.innerHTML = '<span class="status-dot live"></span><span style="color:#4ab87a;font-size:0.82rem;font-weight:600;">LIVE</span>';
+    } else if (meta.status === 'complete') {
+      badge.innerHTML = '<span class="status-dot complete"></span><span style="color:#4a9edd;font-size:0.82rem;">Complete</span>';
+    } else {
+      badge.innerHTML = '';
+    }
+
+    // Fetch contacts (non-deleted)
+    const contacts = await sbFetch('contacts', {
+      select: 'operator,call,band,mode,points,qso_utc,station_name',
+      contest_id: `eq.${contestId}`,
+      deleted: 'eq.false',
+      order: 'qso_utc.asc',
+    });
+
+    // Fetch latest score snapshot
+    let snapshot = null;
+    try {
+      const snaps = await sbFetch('score_snapshots', {
+        select: '*',
+        contest_id: `eq.${contestId}`,
+        order: 'snapshot_utc.desc',
+        limit: 1,
+      });
+      snapshot = snaps[0] || null;
+    } catch (_) {}
+
+    renderContestStats(root, meta, contacts, snapshot);
+
+  } catch (e) {
+    root.innerHTML = `<div class="error-msg" style="margin:2rem 0;">Error loading contest: ${esc(e.message)}</div>`;
+  }
+}
+
+// ── Render ───────────────────────────────────────────────────────────────────
+function renderContestStats(root, meta, contacts, snapshot) {
+  const total = contacts.length;
+
+  // Band breakdown
+  const bandMap = {};
+  contacts.forEach(c => {
+    if (!c.band) return;
+    bandMap[c.band] = (bandMap[c.band] || 0) + 1;
+  });
+  const bands = Object.entries(bandMap).sort((a,b) => b[1]-a[1]);
+  const maxBand = bands[0]?.[1] || 1;
+
+  // Mode breakdown
+  const modeMap = {};
+  contacts.forEach(c => {
+    if (!c.mode) return;
+    modeMap[c.mode] = (modeMap[c.mode] || 0) + 1;
+  });
+  const modes = Object.entries(modeMap).sort((a,b) => b[1]-a[1]);
+
+  // Operator breakdown
+  const opMap = {};
+  const opBandMap = {};
+  contacts.forEach(c => {
+    const op = c.operator || '?';
+    opMap[op] = (opMap[op] || 0) + 1;
+    if (!opBandMap[op]) opBandMap[op] = new Set();
+    if (c.band) opBandMap[op].add(c.band);
+  });
+  const operators = Object.entries(opMap).sort((a,b) => b[1]-a[1]);
+
+  // Hourly rate (last 24h or full contest window, whichever is smaller)
+  const hourMap = {};
+  contacts.forEach(c => {
+    if (!c.qso_utc) return;
+    const h = c.qso_utc.slice(0, 13); // 'YYYY-MM-DDTHH'
+    hourMap[h] = (hourMap[h] || 0) + 1;
+  });
+  const hours = Object.entries(hourMap).sort((a,b) => a[0].localeCompare(b[0]));
+  const maxHour = Math.max(...hours.map(h => h[1]), 1);
+
+  // Recent QSOs (last 15)
+  const recent = [...contacts].reverse().slice(0, 15);
+
+  // Score from snapshot or derive from contacts
+  const score  = snapshot?.score ?? null;
+  const mults  = snapshot?.total_mults ?? null;
+  const points = snapshot?.total_points ?? contacts.reduce((s,c) => s + (c.points||0), 0);
+
+  // Rate — QSOs in last 60 min
+  const oneHourAgo = new Date(Date.now() - 3600000).toISOString();
+  const rate1h = contacts.filter(c => c.qso_utc >= oneHourAgo).length;
+
+  const callsign = meta.station_callsign || 'NE2CC';
+  const contestDate = meta.started_at
+    ? new Date(meta.started_at).toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' })
+    : String(meta.year);
+
+  root.innerHTML = `
+    <div class="section-sm">
+      <div style="margin-bottom:1.25rem;">
+        <div class="section-label">${esc(meta.contest_type)} · ${esc(callsign)} · ${esc(contestDate)}</div>
+        <h2 class="section-title">${esc(meta.name)}</h2>
+        ${meta.category ? `<div class="section-subtitle">${esc(meta.category)}</div>` : ''}
+      </div>
+
+      <!-- Score tiles -->
+      <div class="stat-tiles">
+        <div class="stat-tile">
+          <div class="stat-tile-val">${fmt(total)}</div>
+          <div class="stat-tile-lbl">QSOs</div>
+        </div>
+        <div class="stat-tile accent">
+          <div class="stat-tile-val">${score != null ? fmt(score) : '—'}</div>
+          <div class="stat-tile-lbl">Score</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-tile-val">${mults != null ? fmt(mults) : '—'}</div>
+          <div class="stat-tile-lbl">Mults</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-tile-val">${fmt(points)}</div>
+          <div class="stat-tile-lbl">Points</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-tile-val">${operators.length}</div>
+          <div class="stat-tile-lbl">Operators</div>
+        </div>
+        ${meta.status === 'live' ? `<div class="stat-tile">
+          <div class="stat-tile-val">${fmt(rate1h)}</div>
+          <div class="stat-tile-lbl">QSOs / hr</div>
+        </div>` : ''}
+      </div>
+
+      <!-- Band + Mode charts -->
+      <div class="chart-grid">
+        <div class="stats-card">
+          <div class="stats-card-title">Band Distribution</div>
+          <div class="donut-row">
+            <div class="donut-svg-wrap">${renderDonutSvg(bands, maxBand)}</div>
+            <div class="donut-legend">
+              ${bands.map(([b,n],i) => `
+                <div class="donut-item">
+                  <span class="donut-swatch" style="background:${COLORS[i%COLORS.length]}"></span>
+                  <span class="donut-item-label">${esc(b)}</span>
+                  <span class="donut-item-val">${fmt(n)} (${Math.round(n/total*100)}%)</span>
+                </div>`).join('')}
+            </div>
+          </div>
+        </div>
+        <div class="stats-card">
+          <div class="stats-card-title">Mode Distribution</div>
+          <div class="donut-row">
+            <div class="donut-svg-wrap">${renderDonutSvg(modes, null)}</div>
+            <div class="donut-legend">
+              ${modes.map(([m,n],i) => `
+                <div class="donut-item">
+                  <span class="donut-swatch" style="background:${COLORS[i%COLORS.length]}"></span>
+                  <span class="donut-item-label">${esc(m)}</span>
+                  <span class="donut-item-val">${fmt(n)} (${Math.round(n/total*100)}%)</span>
+                </div>`).join('')}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Operator leaderboard + hourly rate -->
+      <div class="chart-grid">
+        <div class="stats-card">
+          <div class="stats-card-title">Operator Leaderboard</div>
+          <table class="op-table">
+            <thead>
+              <tr><th>#</th><th>Operator</th><th style="text-align:right">QSOs</th><th>Bands</th></tr>
+            </thead>
+            <tbody>
+              ${operators.map(([op,n],i) => {
+                const rank = i+1;
+                const medal = rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':rank;
+                const bandList = [...(opBandMap[op]||[])].sort().join(' · ');
+                return `<tr>
+                  <td class="op-rank">${medal}</td>
+                  <td class="op-call">${esc(op)}</td>
+                  <td class="op-qsos">${fmt(n)}</td>
+                  <td class="op-bands">${esc(bandList)}</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="stats-card">
+          <div class="stats-card-title">QSOs per Hour (UTC)</div>
+          ${hours.length ? renderRateChart(hours, maxHour) : '<p style="color:var(--text-muted);font-size:0.85rem;">No hourly data available.</p>'}
+        </div>
+      </div>
+
+      <!-- Band detail table -->
+      <div class="stats-card" style="margin-bottom:1.5rem;">
+        <div class="stats-card-title">Band Detail</div>
+        <table class="band-table">
+          <thead><tr><th>Band</th><th class="band-bar-cell">Distribution</th><th style="text-align:right">QSOs</th><th style="text-align:right">%</th></tr></thead>
+          <tbody>
+            ${bands.map(([b,n]) => `
+              <tr>
+                <td class="band-name">${esc(b)}</td>
+                <td class="band-bar-cell">
+                  <div class="band-bar-wrap"><div class="band-bar-fill" style="width:${Math.round(n/maxBand*100)}%"></div></div>
+                </td>
+                <td class="band-qso-val">${fmt(n)}</td>
+                <td style="text-align:right;color:var(--text-muted);font-size:0.85rem;">${Math.round(n/total*100)}%</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Recent QSOs -->
+      <div class="stats-card" style="margin-bottom:2rem;">
+        <div class="stats-card-title">Recent QSOs (last ${recent.length})</div>
+        <div style="overflow-x:auto;">
+          <table class="recent-table">
+            <thead><tr><th>Callsign</th><th>Band</th><th>Mode</th><th>Operator</th><th>UTC Time</th></tr></thead>
+            <tbody>
+              ${recent.map(c => `
+                <tr>
+                  <td class="recent-call">${esc(c.call||'?')}</td>
+                  <td><span class="recent-band">${esc(c.band||'?')}</span></td>
+                  <td class="recent-mode">${esc(c.mode||'?')}</td>
+                  <td class="recent-op">${esc(c.operator||'?')}</td>
+                  <td class="recent-time">${c.qso_utc ? c.qso_utc.slice(11,16) + 'z' : '—'}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Auto-refresh if live
+  if (meta.status === 'live') {
+    setTimeout(() => loadContest(meta.id, null), 60000);
+  }
+}
+
+// ── SVG donut ────────────────────────────────────────────────────────────────
+function renderDonutSvg(entries, _) {
+  if (!entries.length) return '<svg viewBox="0 0 100 100"><text x="50" y="55" text-anchor="middle" fill="#aaa" font-size="10">No data</text></svg>';
+  const total = entries.reduce((s,[,n]) => s+n, 0);
+  if (!total) return '';
+  const cx=50, cy=50, r=38, inner=22;
+  let angle = -Math.PI/2, paths = '';
+  entries.forEach(([,n],i) => {
+    const slice = (n/total)*2*Math.PI;
+    const x1=cx+r*Math.cos(angle), y1=cy+r*Math.sin(angle);
+    angle += slice;
+    const x2=cx+r*Math.cos(angle), y2=cy+r*Math.sin(angle);
+    const xi1=cx+inner*Math.cos(angle-slice), yi1=cy+inner*Math.sin(angle-slice);
+    const xi2=cx+inner*Math.cos(angle), yi2=cy+inner*Math.sin(angle);
+    const large = slice>Math.PI?1:0;
+    const color = COLORS[i%COLORS.length];
+    paths += `<path d="M${x1.toFixed(2)} ${y1.toFixed(2)} A${r} ${r} 0 ${large} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} L${xi2.toFixed(2)} ${yi2.toFixed(2)} A${inner} ${inner} 0 ${large} 0 ${xi1.toFixed(2)} ${yi1.toFixed(2)} Z" fill="${color}" opacity="0.9"/>`;
+  });
+  return `<svg viewBox="0 0 100 100">${paths}<text x="${cx}" y="${cy+4}" text-anchor="middle" fill="#1a1a18" font-size="11" font-weight="700" font-family="Barlow Condensed,sans-serif">${fmt(total)}</text></svg>`;
+}
+
+// ── Rate chart ────────────────────────────────────────────────────────────────
+function renderRateChart(hours, maxHour) {
+  const bars = hours.map(([h, n]) => {
+    const hh = h.slice(11,13);
+    const pct = Math.round((n/maxHour)*100);
+    return `<div class="rate-bar-wrap" title="${hh}z: ${n} QSOs">
+      <div class="rate-bar" style="height:${pct}%"></div>
+      <div style="font-size:9px;color:var(--text-light);margin-top:2px;">${hh}</div>
+    </div>`;
+  }).join('');
+  return `<div class="rate-chart" style="align-items:flex-end;gap:3px;height:120px;display:flex;padding-bottom:0;">${bars}</div>`;
+}
+
+init();
+</script>
+
+</body>
+</html>

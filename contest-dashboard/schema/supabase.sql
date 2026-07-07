@@ -97,12 +97,13 @@ ALTER TABLE score_snapshots ENABLE ROW LEVEL SECURITY;
 ALTER TABLE stations       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE config_events  ENABLE ROW LEVEL SECURITY;
 
--- Allow authenticated users to read all rows
-CREATE POLICY "auth read contests"        ON contests        FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "auth read contacts"        ON contacts        FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "auth read score_snapshots" ON score_snapshots FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "auth read stations"        ON stations        FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "auth read config_events"   ON config_events   FOR SELECT USING (auth.role() = 'authenticated');
+-- Public read (anon key) — safe because data is non-sensitive contest logs.
+-- The stats.html page uses the anon key directly from the browser.
+CREATE POLICY "anon read contests"        ON contests        FOR SELECT USING (true);
+CREATE POLICY "anon read contacts"        ON contacts        FOR SELECT USING (true);
+CREATE POLICY "anon read score_snapshots" ON score_snapshots FOR SELECT USING (true);
+CREATE POLICY "anon read stations"        ON stations        FOR SELECT USING (true);
+CREATE POLICY "anon read config_events"   ON config_events   FOR SELECT USING (true);
 
 -- Service-role (used by the Pi) has superuser-equivalent access — no extra policies needed.
 
