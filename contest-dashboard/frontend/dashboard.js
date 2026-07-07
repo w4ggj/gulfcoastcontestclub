@@ -327,6 +327,8 @@ function renderLeaderboard(operators, opBand) {
     obMap[row.operator][row.band] = row.qsos;
   }
 
+  renderDonut('donut-operators', operators, 'operator', 'qsos');
+
   tbody.innerHTML = operators.map((op, i) => {
     const rank = i + 1;
     const rankClass = rank <= 3 ? `rank-${rank}` : '';

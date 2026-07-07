@@ -278,6 +278,26 @@
 }
 .lb-subtitle { font-size: 0.9rem; color: var(--dash-text-sub); }
 
+/* Two-column layout: donut left, table right */
+.lb-body-grid {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 1rem;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.lb-donut-panel {
+  background: var(--dash-card);
+  border: 1px solid var(--dash-border);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  overflow: hidden;
+}
+
 .lb-table-wrap { flex: 1; overflow-y: auto; }
 .lb-table {
   width: 100%;
@@ -301,14 +321,15 @@
 .lb-table tbody tr:hover { background: var(--dash-surface); }
 .lb-table tbody tr:first-child td { font-size: 1.1em; }
 
-.lb-rank { width: 3rem; color: var(--dash-text-sub); font-size: 1rem; }
-.lb-op { font-size: 1.6rem; font-weight: 700; color: var(--white); letter-spacing: 0.04em; }
-.lb-qsos { font-size: 2rem; font-weight: 900; color: var(--dash-gold); text-align: right; }
-.lb-bands { font-size: 0.85rem; color: var(--dash-text-sub); }
+.lb-rank { width: 2.5rem; color: var(--dash-text-sub); font-size: 0.9rem; }
+.lb-op { font-size: 1.1rem; font-weight: 700; color: var(--white); letter-spacing: 0.04em; }
+.lb-qsos { font-size: 1.3rem; font-weight: 900; color: var(--dash-gold); text-align: right; }
+.lb-bands { font-size: 0.8rem; color: var(--dash-text-sub); }
 
-.lb-table td.lb-rank { font-size: 1.1rem; color: var(--dash-text-sub); }
-.lb-table td.lb-op  { font-size: 1.5rem; }
-.lb-table td.lb-qsos { font-size: 1.8rem; }
+.lb-table td { padding: 0.4rem 0.75rem; }
+.lb-table td.lb-rank { font-size: 0.95rem; color: var(--dash-text-sub); }
+.lb-table td.lb-op  { font-size: 1.1rem; }
+.lb-table td.lb-qsos { font-size: 1.25rem; }
 
 /* Rank medal colors */
 .rank-1 td.lb-rank { color: #ffd700; }
@@ -619,7 +640,7 @@ select.form-input { appearance: none; cursor: pointer; }
   position: absolute;
   top: 0; left: 0;
   height: 100%;
-  animation: ticker-scroll 50s linear infinite;
+  animation: ticker-scroll 75s linear infinite;
 }
 .ticker-track:hover { animation-play-state: paused; }
 .ticker-item {
@@ -681,11 +702,13 @@ select.form-input { appearance: none; cursor: pointer; }
   min-height: 0;
   padding: 6px 0;
 }
-/* Square box that fills the available height; SVG fills it fully */
+/* Square box; capped so legend stays visible */
 .donut-circle-wrap {
-  align-self: stretch;
+  align-self: center;
   aspect-ratio: 1 / 1;
   flex-shrink: 0;
+  max-height: 70%;
+  width: auto;
 }
 .donut-circle-wrap svg {
   display: block;
