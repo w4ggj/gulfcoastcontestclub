@@ -584,7 +584,7 @@ select.form-input { appearance: none; cursor: pointer; }
   display: flex;
   align-items: center;
   gap: 0;
-  height: 32px;
+  height: 44px;
   background: #0a1628;
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
@@ -593,8 +593,8 @@ select.form-input { appearance: none; cursor: pointer; }
 }
 .ticker-label {
   flex-shrink: 0;
-  padding: 0 12px;
-  font-size: 0.65rem;
+  padding: 0 14px;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   color: var(--accent);
@@ -619,16 +619,16 @@ select.form-input { appearance: none; cursor: pointer; }
   position: absolute;
   top: 0; left: 0;
   height: 100%;
-  animation: ticker-scroll 40s linear infinite;
+  animation: ticker-scroll 50s linear infinite;
 }
 .ticker-track:hover { animation-play-state: paused; }
 .ticker-item {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 0 24px;
+  gap: 8px;
+  padding: 0 28px;
   height: 100%;
-  font-size: 0.8rem;
+  font-size: 1.05rem;
   font-family: 'Barlow Condensed', sans-serif;
   font-weight: 600;
   color: var(--dash-text);
@@ -636,12 +636,13 @@ select.form-input { appearance: none; cursor: pointer; }
 }
 .ticker-item .ti-call {
   color: var(--accent);
-  font-size: 0.9rem;
+  font-size: 1.15rem;
+  font-weight: 700;
   letter-spacing: 0.04em;
 }
 .ticker-item .ti-op {
   color: var(--dash-text-sub);
-  font-size: 0.72rem;
+  font-size: 0.9rem;
 }
 .ticker-item .ti-sep {
   color: var(--border);
@@ -649,15 +650,15 @@ select.form-input { appearance: none; cursor: pointer; }
 .ticker-item .ti-band {
   background: var(--accent);
   color: #000;
-  font-size: 0.65rem;
+  font-size: 0.8rem;
   font-weight: 700;
-  padding: 1px 5px;
+  padding: 2px 7px;
   border-radius: 3px;
   letter-spacing: 0.04em;
 }
 .ticker-item .ti-mode {
   color: var(--dash-text-sub);
-  font-size: 0.72rem;
+  font-size: 0.9rem;
 }
 @keyframes ticker-scroll {
   0%   { transform: translateX(0); }
