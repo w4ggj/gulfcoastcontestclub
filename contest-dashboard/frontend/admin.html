@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GCCC Dashboard — Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="admin-body">
+
+<nav class="site-nav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-brand">
+      <img src="../assets/logo.webp" alt="GCCC" width="32" height="32">
+      <div class="nav-brand-text">
+        <span class="nav-brand-call">GCCC</span>
+        <span class="nav-brand-name">Contest Dashboard</span>
+      </div>
+    </a>
+    <div>
+      <a href="index.html" class="nav-link">← Dashboard</a>
+    </div>
+  </div>
+</nav>
+
+<main class="admin-main">
+
+  <!-- Live contest status banner -->
+  <div id="live-banner" class="live-banner hidden">
+    <span class="live-dot"></span>
+    <span id="live-banner-text">Contest live</span>
+    <button class="btn btn-danger btn-sm" onclick="completeContest()">Mark Complete</button>
+  </div>
+
+  <!-- ── Create / select contest ───────────────────────────────────── -->
+  <section class="admin-section">
+    <h2 class="admin-section-title">Contest Lifecycle</h2>
+
+    <div class="admin-card">
+      <h3 class="card-title">New Contest</h3>
+      <div class="form-grid">
+        <label class="form-label">Contest Name
+          <input id="f-name" class="form-input" type="text" placeholder="CQ WW SSB 2025">
+        </label>
+        <label class="form-label">Contest Type
+          <input id="f-type" class="form-input" type="text" placeholder="CQ-WW-SSB">
+        </label>
+        <label class="form-label">Year
+          <input id="f-year" class="form-input" type="number" value="2025">
+        </label>
+        <label class="form-label">Location / Site
+          <input id="f-location" class="form-input" type="text" placeholder="GCCC Home Station">
+        </label>
+        <label class="form-label">Station Callsign
+          <input id="f-callsign" class="form-input" type="text" placeholder="W4GGJ">
+        </label>
+        <label class="form-label">Category
+          <input id="f-category" class="form-input" type="text" placeholder="M/S HP">
+        </label>
+        <label class="form-label">Contest Start (UTC)
+          <input id="f-start" class="form-input" type="datetime-local">
+        </label>
+        <label class="form-label">Contest End (UTC)
+          <input id="f-end" class="form-input" type="datetime-local">
+        </label>
+        <label class="form-label" style="grid-column:1/-1">Notes
+          <textarea id="f-notes" class="form-input form-textarea" rows="2"></textarea>
+        </label>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" onclick="createContest()">Create Contest</button>
+      </div>
+    </div>
+
+    <!-- Existing contests -->
+    <div class="admin-card">
+      <h3 class="card-title">Contests</h3>
+      <div id="contest-list" class="contest-list">
+        <p class="muted">Loading…</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Station setup ─────────────────────────────────────────────── -->
+  <section class="admin-section" id="station-section">
+    <h2 class="admin-section-title">Station Setup <span id="station-contest-label" class="muted"></span></h2>
+    <p class="admin-hint">Add one row per operating position. The <strong>Station Name</strong> must match the NetBios/PC name configured in N1MM (shown in packets as <code>StationName</code>). This maps the PC name to a human-readable position label and records the rig/antenna setup.</p>
+
+    <div class="admin-card">
+      <div class="form-grid">
+        <label class="form-label">Contest
+          <select id="st-contest" class="form-input">
+            <option value="">— select —</option>
+          </select>
+        </label>
+        <label class="form-label">N1MM Station Name (NetBios)
+          <input id="st-name" class="form-input" type="text" placeholder="STATION1">
+        </label>
+        <label class="form-label">Position Label
+          <input id="st-label" class="form-input" type="text" placeholder="Station 1 (160/80)">
+        </label>
+        <label class="form-label">Rig
+          <input id="st-rig" class="form-input" type="text" placeholder="Elecraft K4">
+        </label>
+        <label class="form-label">Antenna
+          <input id="st-ant" class="form-input" type="text" placeholder="160m Inverted-L">
+        </label>
+        <label class="form-label">Bands
+          <input id="st-bands" class="form-input" type="text" placeholder="160, 80">
+        </label>
+        <label class="form-label" style="grid-column:1/-1">Note
+          <input id="st-note" class="form-input" type="text" placeholder="Optional note">
+        </label>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" onclick="addStation()">Add / Update Station</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Notification area ─────────────────────────────────────────── -->
+  <div id="toast-area" class="toast-area"></div>
+
+</main>
+
+<script src="admin.js"></script>
+</body>
+</html>
