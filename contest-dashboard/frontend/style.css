@@ -278,10 +278,10 @@
 }
 .lb-subtitle { font-size: 0.9rem; color: var(--dash-text-sub); }
 
-/* Two-column layout: narrow table left, large donut right */
+/* Two-column layout: large donut left, narrow table right */
 .lb-body-grid {
   display: grid;
-  grid-template-columns: 260px 1fr;
+  grid-template-columns: 1fr 280px;
   gap: 1rem;
   flex: 1;
   min-height: 0;
@@ -702,12 +702,18 @@ select.form-input { appearance: none; cursor: pointer; }
   min-height: 0;
   padding: 6px 0;
 }
-/* Square box: 45% of the flex row width → legend gets remaining ~55% */
+/* War-room donuts: 62% of row width → legend gets 38% */
 .donut-circle-wrap {
-  flex: 0 0 45%;
+  flex: 0 0 62%;
   aspect-ratio: 1 / 1;
   align-self: center;
   min-width: 0;
+}
+/* Leaderboard operator donut: fill panel height instead */
+.lb-donut-panel .donut-circle-wrap {
+  flex: 0 0 auto;
+  align-self: stretch;
+  aspect-ratio: 1 / 1;
 }
 .donut-circle-wrap svg {
   display: block;
