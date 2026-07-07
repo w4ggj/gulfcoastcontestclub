@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GCCC Contest Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="dashboard-body">
+
+<!-- ── No live contest ──────────────────────────────────────────────── -->
+<div id="screen-idle" class="screen hidden">
+  <div class="idle-center">
+    <img src="../assets/logo.webp" alt="GCCC" class="idle-logo">
+    <div class="idle-call">W4GGJ / AG4QX</div>
+    <div class="idle-name">Gulf Coast Contest Club</div>
+    <div class="idle-msg">No contest active</div>
+    <a href="admin.html" class="idle-admin-link">Contest Admin →</a>
+  </div>
+</div>
+
+<!-- ── Main dashboard ───────────────────────────────────────────────── -->
+<div id="screen-dashboard" class="screen hidden">
+
+  <!-- Header bar -->
+  <header class="dash-header">
+    <div class="dash-header-left">
+      <img src="../assets/logo.webp" alt="GCCC" class="dash-logo">
+      <div class="dash-title-block">
+        <span class="dash-contest-name" id="hdr-contest-name">—</span>
+        <span class="dash-callsign" id="hdr-callsign"></span>
+      </div>
+    </div>
+    <div class="dash-header-right">
+      <div class="hdr-stat">
+        <span class="hdr-stat-val" id="hdr-total-qsos">0</span>
+        <span class="hdr-stat-lbl">QSOs</span>
+      </div>
+      <div class="hdr-stat">
+        <span class="hdr-stat-val" id="hdr-score">—</span>
+        <span class="hdr-stat-lbl">Score</span>
+      </div>
+      <div class="hdr-stat">
+        <span class="hdr-stat-val" id="hdr-rate">—</span>
+        <span class="hdr-stat-lbl">/ hr</span>
+      </div>
+      <div class="hdr-stat">
+        <span class="hdr-stat-val" id="hdr-time">00:00</span>
+        <span class="hdr-stat-lbl">UTC</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- View container (A = war-room, B = leaderboard) -->
+  <main class="dash-main">
+
+    <!-- ── View A: War-room ─────────────────────────────────────────── -->
+    <div id="view-warroom" class="dash-view active">
+
+      <!-- Score row -->
+      <div class="score-row">
+        <div class="score-tile">
+          <div class="score-tile-val" id="sr-qsos">0</div>
+          <div class="score-tile-lbl">QSOs</div>
+        </div>
+        <div class="score-tile accent">
+          <div class="score-tile-val" id="sr-score">—</div>
+          <div class="score-tile-lbl">Score</div>
+        </div>
+        <div class="score-tile">
+          <div class="score-tile-val" id="sr-mults">—</div>
+          <div class="score-tile-lbl">Mults</div>
+        </div>
+        <div class="score-tile">
+          <div class="score-tile-val" id="sr-points">—</div>
+          <div class="score-tile-lbl">Points</div>
+        </div>
+        <div class="score-tile">
+          <div class="score-tile-val" id="sr-rate">—</div>
+          <div class="score-tile-lbl">QSOs / hr</div>
+        </div>
+      </div>
+
+      <!-- Band + Station grid -->
+      <div class="mid-grid">
+
+        <!-- Band breakdown -->
+        <section class="panel panel-bands">
+          <h2 class="panel-title">Bands</h2>
+          <div class="band-grid" id="band-grid">
+            <!-- populated by JS -->
+          </div>
+        </section>
+
+        <!-- Station panels -->
+        <section class="panel panel-stations">
+          <h2 class="panel-title">Stations</h2>
+          <div class="station-list" id="station-list">
+            <!-- populated by JS -->
+          </div>
+        </section>
+
+      </div>
+
+    </div><!-- /view-warroom -->
+
+    <!-- ── View B: Leaderboard ──────────────────────────────────────── -->
+    <div id="view-leaderboard" class="dash-view hidden">
+      <div class="lb-header">
+        <h1 class="lb-title">Operator Leaderboard</h1>
+        <div class="lb-subtitle" id="lb-subtitle">—</div>
+      </div>
+      <div class="lb-table-wrap">
+        <table class="lb-table" id="lb-table">
+          <thead>
+            <tr>
+              <th class="lb-rank">#</th>
+              <th class="lb-op">Operator</th>
+              <th class="lb-qsos">QSOs</th>
+              <th class="lb-bands">Bands</th>
+            </tr>
+          </thead>
+          <tbody id="lb-body">
+          </tbody>
+        </table>
+      </div>
+    </div><!-- /view-leaderboard -->
+
+  </main>
+
+  <!-- Footer / rotation indicator -->
+  <footer class="dash-footer">
+    <div class="view-indicator" id="view-indicator">
+      <button class="view-btn active" data-view="warroom" onclick="setView('warroom')">War Room</button>
+      <button class="view-btn" data-view="leaderboard" onclick="setView('leaderboard')">Leaderboard</button>
+    </div>
+    <div class="dash-footer-right">
+      <span class="footer-status" id="footer-status">Connecting…</span>
+      <a href="admin.html" class="footer-admin">Admin</a>
+    </div>
+  </footer>
+
+</div><!-- /screen-dashboard -->
+
+<script src="dashboard.js"></script>
+</body>
+</html>

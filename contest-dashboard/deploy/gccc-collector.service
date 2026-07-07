@@ -1,0 +1,36 @@
+# systemd service for the GCCC Contest Collector
+# Install: copy to /etc/systemd/system/gccc-collector.service
+# Enable:  sudo systemctl daemon-reload && sudo systemctl enable --now gccc-collector
+
+[Unit]
+Description=GCCC Contest Dashboard Collector
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/gulfcoastcontestclub/contest-dashboard/collector
+
+# ── Edit these paths/values for your Pi ──────────────────────────────────────
+Environment=DB_PATH=/media/usb/gccc_contest.db
+Environment=N1MM_UDP_PORT=12060
+Environment=API_HOST=0.0.0.0
+Environment=API_PORT=8080
+Environment=ROTATION_SECONDS=30
+Environment=EXPECT_DUPES=true
+
+# Supabase (optional — leave blank to disable cloud mirror)
+Environment=SUPABASE_URL=
+Environment=SUPABASE_SERVICE_KEY=
+# ─────────────────────────────────────────────────────────────────────────────
+
+ExecStart=/home/pi/gccc-venv/bin/python main.py
+
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
