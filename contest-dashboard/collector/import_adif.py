@@ -63,24 +63,24 @@ def adif_to_contact(rec: dict, contest_id: int) -> dict | None:
     # build ISO-ish timestamp from ADIF date+time
     ts = f"{date[:4]}-{date[4:6]}-{date[6:8]}T{time[:2]}:{time[2:4]}:{time[4:6]}Z"
 
+    freq = rec.get("FREQ", "")
     return {
-        "contest_id": contest_id,
         "n1mm_id": n1mm_id,
-        "callsign": call,
+        "call": call,
         "band": band,
         "mode": mode,
         "operator": operator,
-        "station": station,
-        "timestamp": ts,
-        "rst_sent": rec.get("RST_SENT", ""),
-        "rst_rcvd": rec.get("RST_RCVD", ""),
-        "comment": rec.get("COMMENT", rec.get("NOTES", "")),
-        "freq": rec.get("FREQ", ""),
-        "tx_pwr": rec.get("TX_PWR", ""),
-        "gridsquare": rec.get("GRIDSQUARE", ""),
-        "raw_data": str(rec),
-        "deleted": 0,
+        "station_name": station,
+        "qso_utc": ts,
+        "rx_freq": freq,
+        "tx_freq": freq,
+        "points": 0,
+        "radio_nr": 0,
         "is_original": 1,
+        "is_mult1": 0,
+        "is_mult2": 0,
+        "is_mult3": 0,
+        "is_run_qso": 0,
     }
 
 
@@ -90,7 +90,7 @@ def main():
     ap.add_argument("--contest-id", type=int, default=None)
     args = ap.parse_args()
 
-    con = db.get_conn()
+    con = db.get_connection()
 
     if args.contest_id:
         row = con.execute(
@@ -99,7 +99,7 @@ def main():
         if not row:
             print(f"Error: contest id {args.contest_id} not found.")
             sys.exit(1)
-        contest_id, contest_name = row
+        contest_id, contest_name = row["id"], row["name"]
     else:
         row = con.execute(
             "SELECT id, name FROM contests WHERE status='live' ORDER BY id DESC LIMIT 1"
@@ -107,7 +107,7 @@ def main():
         if not row:
             print("Error: no live contest found. Create one in the admin UI or pass --contest-id.")
             sys.exit(1)
-        contest_id, contest_name = row
+        contest_id, contest_name = row["id"], row["name"]
 
     print(f"Importing into contest #{contest_id}: {contest_name}")
 
@@ -124,7 +124,7 @@ def main():
             skipped += 1
             continue
         try:
-            db.upsert_contact(con, contact)
+            db.upsert_contact(con, contest_id, contact)
             inserted += 1
         except Exception as e:
             print(f"  Error inserting {rec.get('CALL')}: {e}")
