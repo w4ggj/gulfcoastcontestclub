@@ -52,35 +52,49 @@ def adif_to_contact(rec: dict, contest_id: int) -> dict | None:
     if not (call and date and time and band_raw):
         return None
 
-    station = rec.get("STATION_CALLSIGN", rec.get("OPERATOR", "UNKNOWN"))
-    operator = rec.get("OPERATOR", station)
     band = normalize_band(band_raw)
     mode = rec.get("MODE", "").upper()
+    operator = rec.get("OPERATOR", rec.get("STATION_CALLSIGN", "UNKNOWN"))
 
-    uid = f"{call}:{date}:{time}:{band}:{station}"
-    n1mm_id = "adif:" + hashlib.md5(uid.encode()).hexdigest()[:16]
+    # Use N1MM's own UUID if present, else generate a composite hash
+    n1mm_id_raw = rec.get("APP_N1MM_ID", "").strip()
+    if n1mm_id_raw:
+        n1mm_id = n1mm_id_raw
+    else:
+        fallback = f"{call}:{date}:{time}:{band}:{operator}"
+        n1mm_id = "adif:" + hashlib.md5(fallback.encode()).hexdigest()[:16]
 
-    # build ISO-ish timestamp from ADIF date+time
     ts = f"{date[:4]}-{date[4:6]}-{date[6:8]}T{time[:2]}:{time[2:4]}:{time[4:6]}Z"
 
-    freq = rec.get("FREQ", "")
+    # Prefer N1MM-specific fields when available
+    station_name = rec.get("APP_N1MM_NETBIOSNAME", rec.get("STATION_CALLSIGN", "UNKNOWN"))
+    is_original = 1 if rec.get("APP_N1MM_ISORIGINAL", "True").strip().lower() == "true" else 0
+    points = int(rec.get("APP_N1MM_POINTS", 0) or 0)
+    radio_nr = int(rec.get("APP_N1MM_RADIO_NR", 0) or 0)
+    is_run_qso = int(rec.get("APP_N1MM_ISRUNQSO", 0) or 0)
+    is_mult1 = int(rec.get("APP_N1MM_MULT1", 0) or 0)
+    is_mult2 = int(rec.get("APP_N1MM_MULT2", 0) or 0)
+    is_mult3 = int(rec.get("APP_N1MM_MULT3", 0) or 0)
+    tx_freq = rec.get("FREQ", "")
+    rx_freq = rec.get("FREQ_RX", tx_freq)
+
     return {
         "n1mm_id": n1mm_id,
         "call": call,
         "band": band,
         "mode": mode,
         "operator": operator,
-        "station_name": station,
+        "station_name": station_name,
         "qso_utc": ts,
-        "rx_freq": freq,
-        "tx_freq": freq,
-        "points": 0,
-        "radio_nr": 0,
-        "is_original": 1,
-        "is_mult1": 0,
-        "is_mult2": 0,
-        "is_mult3": 0,
-        "is_run_qso": 0,
+        "rx_freq": rx_freq,
+        "tx_freq": tx_freq,
+        "points": points,
+        "radio_nr": radio_nr,
+        "is_original": is_original,
+        "is_mult1": is_mult1,
+        "is_mult2": is_mult2,
+        "is_mult3": is_mult3,
+        "is_run_qso": is_run_qso,
     }
 
 
