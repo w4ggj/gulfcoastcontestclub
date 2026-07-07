@@ -261,6 +261,9 @@ function renderStats() {
   renderStations(s.stations || []);
   renderLeaderboard(s.operators || [], s.op_band || []);
   renderTicker(s.recent || []);
+  renderDonut('donut-bands', s.bands  || [], 'band', 'qsos');
+  renderDonut('donut-modes', s.modes  || [], 'mode', 'qsos');
+  renderRateChart('rate-chart', s.hourly || []);
 }
 
 function renderScore() {
@@ -346,6 +349,101 @@ function renderLeaderboard(operators, opBand) {
       </td>
     </tr>`;
   }).join('');
+}
+
+// ── Chart palette ───────────────────────────────────────────────────────────
+const CHART_COLORS = [
+  '#2d8a58','#4ab87a','#e8c040','#4a9edd','#e05050',
+  '#9b59b6','#e67e22','#1abc9c','#c0392b','#2980b9',
+];
+
+function renderDonut(containerId, data, labelKey, valueKey) {
+  const wrap = document.getElementById(containerId);
+  if (!wrap) return;
+  if (!data.length) { wrap.innerHTML = '<span style="color:var(--dash-text-sub);font-size:0.8rem">No data</span>'; return; }
+
+  const total = data.reduce((s, d) => s + (d[valueKey] || 0), 0);
+  if (!total) { wrap.innerHTML = '<span style="color:var(--dash-text-sub);font-size:0.8rem">No data</span>'; return; }
+
+  const cx = 60, cy = 60, r = 46, inner = 26;
+  let angle = -Math.PI / 2;
+  let paths = '';
+
+  data.forEach((d, i) => {
+    const slice = (d[valueKey] / total) * 2 * Math.PI;
+    const x1 = cx + r * Math.cos(angle);
+    const y1 = cy + r * Math.sin(angle);
+    angle += slice;
+    const x2 = cx + r * Math.cos(angle);
+    const y2 = cy + r * Math.sin(angle);
+    const xi1 = cx + inner * Math.cos(angle - slice);
+    const yi1 = cy + inner * Math.sin(angle - slice);
+    const xi2 = cx + inner * Math.cos(angle);
+    const yi2 = cy + inner * Math.sin(angle);
+    const large = slice > Math.PI ? 1 : 0;
+    const color = CHART_COLORS[i % CHART_COLORS.length];
+    paths += `<path d="M${xi1},${yi1} L${x1},${y1} A${r},${r} 0 ${large},1 ${x2},${y2} L${xi2},${yi2} A${inner},${inner} 0 ${large},0 ${xi1},${yi1} Z" fill="${color}" opacity="0.9"/>`;
+  });
+
+  const legend = data.map((d, i) => {
+    const color = CHART_COLORS[i % CHART_COLORS.length];
+    const pct = Math.round((d[valueKey] / total) * 100);
+    return `<div class="donut-legend-item">
+      <span class="donut-swatch" style="background:${color}"></span>
+      <span class="donut-legend-label">${esc(String(d[labelKey] || '?'))}</span>
+      <span class="donut-legend-val">${d[valueKey]} (${pct}%)</span>
+    </div>`;
+  }).join('');
+
+  wrap.innerHTML = `
+    <svg width="120" height="120" viewBox="0 0 120 120">${paths}
+      <text x="${cx}" y="${cy+5}" text-anchor="middle" fill="#e8f5ed" font-size="13" font-weight="700" font-family="Barlow Condensed,sans-serif">${total}</text>
+    </svg>
+    <div class="donut-legend">${legend}</div>`;
+}
+
+function renderRateChart(containerId, hourly) {
+  const wrap = document.getElementById(containerId);
+  if (!wrap) return;
+  if (!hourly.length) { wrap.innerHTML = '<span style="color:var(--dash-text-sub);font-size:0.8rem">No data</span>'; return; }
+
+  // Fill in all 24 hours that appear in the data range
+  const hourMap = {};
+  for (const h of hourly) hourMap[h.hour] = h.qsos;
+
+  // Determine hour range
+  const hours = hourly.map(h => parseInt(h.hour, 10));
+  const minH = Math.min(...hours);
+  const maxH = Math.max(...hours);
+  const slots = [];
+  for (let h = minH; h <= maxH; h++) {
+    const label = String(h).padStart(2, '0');
+    slots.push({ hour: label, qsos: hourMap[label] || 0 });
+  }
+
+  const maxQ = Math.max(...slots.map(s => s.qsos), 1);
+  const W = 500, H = 120, padL = 24, padB = 22, padT = 10, padR = 8;
+  const chartW = W - padL - padR;
+  const chartH = H - padT - padB;
+  const barW = Math.max(4, Math.floor(chartW / slots.length) - 2);
+
+  let bars = '', labels = '', vals = '';
+  slots.forEach((s, i) => {
+    const x = padL + (i / slots.length) * chartW + (chartW / slots.length - barW) / 2;
+    const barH = s.qsos ? Math.max(3, Math.round((s.qsos / maxQ) * chartH)) : 0;
+    const y = padT + chartH - barH;
+    if (barH) bars += `<rect class="rate-bar" x="${x}" y="${y}" width="${barW}" height="${barH}" rx="2"><title>${s.hour}:00 UTC — ${s.qsos} QSOs</title></rect>`;
+    if (i % Math.ceil(slots.length / 8) === 0)
+      labels += `<text class="rate-axis-label" x="${x + barW/2}" y="${H - 6}" text-anchor="middle">${s.hour}</text>`;
+    if (s.qsos && barH > 12)
+      vals += `<text class="rate-val-label" x="${x + barW/2}" y="${y - 2}" text-anchor="middle">${s.qsos}</text>`;
+  });
+
+  wrap.innerHTML = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+    <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT+chartH}" stroke="var(--dash-border)" stroke-width="1"/>
+    <line x1="${padL}" y1="${padT+chartH}" x2="${W-padR}" y2="${padT+chartH}" stroke="var(--dash-border)" stroke-width="1"/>
+    ${bars}${labels}${vals}
+  </svg>`;
 }
 
 function renderTicker(recent) {
