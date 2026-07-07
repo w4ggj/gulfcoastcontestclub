@@ -257,12 +257,11 @@ function renderStats() {
   document.getElementById('sr-qsos').textContent        = fmt(total);
   document.getElementById('sr-rate').textContent        = fmt(rate);
 
-  renderBands(s.bands || []);
   renderStations(s.stations || []);
   renderLeaderboard(s.operators || [], s.op_band || []);
   renderTicker(s.recent || []);
-  renderDonut('donut-bands', s.bands  || [], 'band', 'qsos');
-  renderDonut('donut-modes', s.modes  || [], 'mode', 'qsos');
+  renderDonut('donut-bands', s.bands  || [], 'band', 'qsos', 160);
+  renderDonut('donut-modes', s.modes  || [], 'mode', 'qsos', 160);
   renderRateChart('rate-chart', s.hourly || []);
 }
 
@@ -357,7 +356,7 @@ const CHART_COLORS = [
   '#9b59b6','#e67e22','#1abc9c','#c0392b','#2980b9',
 ];
 
-function renderDonut(containerId, data, labelKey, valueKey) {
+function renderDonut(containerId, data, labelKey, valueKey, size = 120) {
   const wrap = document.getElementById(containerId);
   if (!wrap) return;
   if (!data.length) { wrap.innerHTML = '<span style="color:var(--dash-text-sub);font-size:0.8rem">No data</span>'; return; }
@@ -365,7 +364,9 @@ function renderDonut(containerId, data, labelKey, valueKey) {
   const total = data.reduce((s, d) => s + (d[valueKey] || 0), 0);
   if (!total) { wrap.innerHTML = '<span style="color:var(--dash-text-sub);font-size:0.8rem">No data</span>'; return; }
 
-  const cx = 60, cy = 60, r = 46, inner = 26;
+  const cx = size / 2, cy = size / 2;
+  const r = size * 0.38, inner = size * 0.21;
+  const fontSize = Math.round(size * 0.11);
   let angle = -Math.PI / 2;
   let paths = '';
 
@@ -396,8 +397,8 @@ function renderDonut(containerId, data, labelKey, valueKey) {
   }).join('');
 
   wrap.innerHTML = `
-    <svg width="120" height="120" viewBox="0 0 120 120">${paths}
-      <text x="${cx}" y="${cy+5}" text-anchor="middle" fill="#e8f5ed" font-size="13" font-weight="700" font-family="Barlow Condensed,sans-serif">${total}</text>
+    <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${paths}
+      <text x="${cx}" y="${cy + fontSize * 0.4}" text-anchor="middle" fill="#e8f5ed" font-size="${fontSize}" font-weight="700" font-family="Barlow Condensed,sans-serif">${total}</text>
     </svg>
     <div class="donut-legend">${legend}</div>`;
 }
