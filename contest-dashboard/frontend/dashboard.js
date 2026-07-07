@@ -262,7 +262,6 @@ function renderStats() {
   renderTicker(s.recent || []);
   renderDonut('donut-bands', s.bands  || [], 'band', 'qsos');
   renderDonut('donut-modes', s.modes  || [], 'mode', 'qsos');
-  renderRateChart('rate-chart', s.hourly || []);
 }
 
 function renderScore() {
@@ -364,14 +363,8 @@ function renderDonut(containerId, data, labelKey, valueKey) {
   const total = data.reduce((s, d) => s + (d[valueKey] || 0), 0);
   if (!total) { wrap.innerHTML = '<span style="color:var(--dash-text-sub);font-size:0.8rem">No data</span>'; return; }
 
-  // Measure available height from the panel, minus title bar (~38px) and padding
-  const panel = wrap.closest('.panel');
-  const availH = panel ? Math.max(120, panel.clientHeight - 50) : 200;
-  const size = Math.min(availH, wrap.clientWidth * 0.45 || availH);
-
-  const cx = size / 2, cy = size / 2;
-  const r = size * 0.38, inner = size * 0.22;
-  const fs = Math.round(size * 0.12);
+  // Fixed logical coordinate space; CSS scales the SVG via donut-circle-wrap
+  const V = 200, cx = 100, cy = 100, r = 76, inner = 44;
   let angle = -Math.PI / 2;
   let paths = '';
 
@@ -402,55 +395,14 @@ function renderDonut(containerId, data, labelKey, valueKey) {
   }).join('');
 
   wrap.innerHTML = `
-    <svg class="donut-svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="flex-shrink:0">${paths}
-      <text x="${cx}" y="${cy + fs * 0.4}" text-anchor="middle" fill="#e8f5ed" font-size="${fs}" font-weight="700" font-family="Barlow Condensed,sans-serif">${total}</text>
-    </svg>
+    <div class="donut-circle-wrap">
+      <svg viewBox="0 0 ${V} ${V}" preserveAspectRatio="xMidYMid meet">${paths}
+        <text x="${cx}" y="${cy + 8}" text-anchor="middle" fill="#e8f5ed" font-size="22" font-weight="700" font-family="Barlow Condensed,sans-serif">${total}</text>
+      </svg>
+    </div>
     <div class="donut-legend">${legend}</div>`;
 }
 
-function renderRateChart(containerId, hourly) {
-  const wrap = document.getElementById(containerId);
-  if (!wrap) return;
-  if (!hourly.length) { wrap.innerHTML = '<span style="color:var(--dash-text-sub);font-size:0.8rem">No data</span>'; return; }
-
-  // Fill in all 24 hours that appear in the data range
-  const hourMap = {};
-  for (const h of hourly) hourMap[h.hour] = h.qsos;
-
-  // Determine hour range
-  const hours = hourly.map(h => parseInt(h.hour, 10));
-  const minH = Math.min(...hours);
-  const maxH = Math.max(...hours);
-  const slots = [];
-  for (let h = minH; h <= maxH; h++) {
-    const label = String(h).padStart(2, '0');
-    slots.push({ hour: label, qsos: hourMap[label] || 0 });
-  }
-
-  const maxQ = Math.max(...slots.map(s => s.qsos), 1);
-  const W = 500, H = 120, padL = 24, padB = 22, padT = 10, padR = 8;
-  const chartW = W - padL - padR;
-  const chartH = H - padT - padB;
-  const barW = Math.max(4, Math.floor(chartW / slots.length) - 2);
-
-  let bars = '', labels = '', vals = '';
-  slots.forEach((s, i) => {
-    const x = padL + (i / slots.length) * chartW + (chartW / slots.length - barW) / 2;
-    const barH = s.qsos ? Math.max(3, Math.round((s.qsos / maxQ) * chartH)) : 0;
-    const y = padT + chartH - barH;
-    if (barH) bars += `<rect class="rate-bar" x="${x}" y="${y}" width="${barW}" height="${barH}" rx="2"><title>${s.hour}:00 UTC — ${s.qsos} QSOs</title></rect>`;
-    if (i % Math.ceil(slots.length / 8) === 0)
-      labels += `<text class="rate-axis-label" x="${x + barW/2}" y="${H - 6}" text-anchor="middle">${s.hour}</text>`;
-    if (s.qsos && barH > 12)
-      vals += `<text class="rate-val-label" x="${x + barW/2}" y="${y - 2}" text-anchor="middle">${s.qsos}</text>`;
-  });
-
-  wrap.innerHTML = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
-    <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT+chartH}" stroke="var(--dash-border)" stroke-width="1"/>
-    <line x1="${padL}" y1="${padT+chartH}" x2="${W-padR}" y2="${padT+chartH}" stroke="var(--dash-border)" stroke-width="1"/>
-    ${bars}${labels}${vals}
-  </svg>`;
-}
 
 function renderTicker(recent) {
   const track = document.getElementById('ticker-track');

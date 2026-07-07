@@ -666,34 +666,39 @@ select.form-input { appearance: none; cursor: pointer; }
 }
 
 /* Charts row */
-/* Rate chart row */
-.rate-row {
-  padding: 0 12px 12px;
-  flex-shrink: 0;
-}
-.panel-rate { min-height: 120px; }
-
 /* Donut panels in mid-grid */
 .panel-bands-donut,
 .panel-modes-donut {
   overflow: hidden;
 }
 
-/* Donut chart */
+/* Donut chart — wrap is a flex row; circle-wrap stretches to panel height */
 .donut-wrap {
   display: flex;
-  align-items: center;
-  gap: 18px;
+  align-items: stretch;
+  gap: 20px;
   flex: 1;
   min-height: 0;
-  padding: 4px 0;
+  padding: 6px 0;
+}
+/* Square box that fills the available height; SVG fills it fully */
+.donut-circle-wrap {
+  align-self: stretch;
+  aspect-ratio: 1 / 1;
+  flex-shrink: 0;
+}
+.donut-circle-wrap svg {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .donut-legend {
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  font-size: 0.78rem;
+  justify-content: center;
+  gap: 6px;
+  font-size: 0.85rem;
   font-family: 'Barlow Condensed', sans-serif;
 }
 .donut-legend-item {
@@ -703,35 +708,10 @@ select.form-input { appearance: none; cursor: pointer; }
   white-space: nowrap;
 }
 .donut-swatch {
-  width: 11px;
-  height: 11px;
+  width: 12px;
+  height: 12px;
   border-radius: 2px;
   flex-shrink: 0;
 }
 .donut-legend-label { color: var(--dash-text); font-weight: 600; }
 .donut-legend-val   { color: var(--dash-text-sub); }
-
-/* Rate bar chart */
-.rate-chart-wrap {
-  width: 100%;
-  height: 140px;
-  position: relative;
-}
-.rate-chart-wrap svg {
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-}
-.rate-bar { fill: var(--dash-accent); opacity: 0.85; transition: opacity 0.15s; }
-.rate-bar:hover { opacity: 1; }
-.rate-axis-label {
-  fill: var(--dash-text-sub);
-  font-size: 9px;
-  font-family: 'Barlow Condensed', sans-serif;
-}
-.rate-val-label {
-  fill: var(--dash-text);
-  font-size: 9px;
-  font-family: 'Barlow Condensed', sans-serif;
-  font-weight: 600;
-}
