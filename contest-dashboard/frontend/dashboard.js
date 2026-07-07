@@ -260,6 +260,7 @@ function renderStats() {
   renderBands(s.bands || []);
   renderStations(s.stations || []);
   renderLeaderboard(s.operators || [], s.op_band || []);
+  renderTicker(s.recent || []);
 }
 
 function renderScore() {
@@ -345,6 +346,34 @@ function renderLeaderboard(operators, opBand) {
       </td>
     </tr>`;
   }).join('');
+}
+
+function renderTicker(recent) {
+  const track = document.getElementById('ticker-track');
+  if (!track) return;
+  if (!recent.length) {
+    track.innerHTML = '<span class="ticker-item"><span class="ti-op">No contacts yet</span></span>';
+    track.style.animation = 'none';
+    return;
+  }
+
+  // Build items; duplicate for seamless loop
+  const items = recent.map(r => {
+    const call = esc(r.call || '?');
+    const op   = r.operator ? esc(r.operator) : '';
+    const band = esc(r.band || '?');
+    const mode = esc(r.mode || '?');
+    return `<span class="ticker-item">
+      <span class="ti-call">${call}</span>
+      ${op ? `<span class="ti-sep">·</span><span class="ti-op">${op}</span>` : ''}
+      <span class="ti-sep">·</span>
+      <span class="ti-band">${band}</span>
+      <span class="ti-mode">${mode}</span>
+    </span>`;
+  }).join('');
+
+  track.innerHTML = items + items;  // duplicate for seamless loop
+  track.style.animation = '';
 }
 
 // ── Utilities ───────────────────────────────────────────────────────────────

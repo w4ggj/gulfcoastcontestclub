@@ -578,3 +578,88 @@ select.form-input { appearance: none; cursor: pointer; }
 }
 .tava-credit a { color: inherit; text-decoration: none; border-bottom: 1px solid currentColor; }
 .tava-credit a:hover { opacity: 0.8; }
+
+/* QSO Ticker */
+.qso-ticker {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  height: 32px;
+  background: #0a1628;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.ticker-label {
+  flex-shrink: 0;
+  padding: 0 12px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  text-transform: uppercase;
+  border-right: 1px solid var(--border);
+  white-space: nowrap;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+.ticker-track-wrap {
+  flex: 1;
+  overflow: hidden;
+  height: 100%;
+  position: relative;
+}
+.ticker-track {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  white-space: nowrap;
+  position: absolute;
+  top: 0; left: 0;
+  height: 100%;
+  animation: ticker-scroll 40s linear infinite;
+}
+.ticker-track:hover { animation-play-state: paused; }
+.ticker-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 24px;
+  height: 100%;
+  font-size: 0.8rem;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 600;
+  color: var(--dash-text);
+  border-right: 1px solid var(--border);
+}
+.ticker-item .ti-call {
+  color: var(--accent);
+  font-size: 0.9rem;
+  letter-spacing: 0.04em;
+}
+.ticker-item .ti-op {
+  color: var(--dash-text-sub);
+  font-size: 0.72rem;
+}
+.ticker-item .ti-sep {
+  color: var(--border);
+}
+.ticker-item .ti-band {
+  background: var(--accent);
+  color: #000;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 3px;
+  letter-spacing: 0.04em;
+}
+.ticker-item .ti-mode {
+  color: var(--dash-text-sub);
+  font-size: 0.72rem;
+}
+@keyframes ticker-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
