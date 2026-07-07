@@ -84,16 +84,19 @@
         </div>
       </div>
 
-      <!-- Band donut + Station grid -->
+      <!-- 3-column grid: band donut | mode donut | stations -->
       <div class="mid-grid">
 
-        <!-- Band distribution donut (replaces bar chart) -->
         <section class="panel panel-bands-donut">
           <h2 class="panel-title">Band Distribution</h2>
-          <div class="donut-wrap donut-wrap-large" id="donut-bands"></div>
+          <div class="donut-wrap" id="donut-bands"></div>
         </section>
 
-        <!-- Station panels -->
+        <section class="panel panel-modes-donut">
+          <h2 class="panel-title">Mode Distribution</h2>
+          <div class="donut-wrap" id="donut-modes"></div>
+        </section>
+
         <section class="panel panel-stations">
           <h2 class="panel-title">Stations</h2>
           <div class="station-list" id="station-list">
@@ -103,19 +106,12 @@
 
       </div>
 
-      <!-- Charts row: mode donut + rate chart -->
-      <div class="charts-row">
-
-        <section class="panel panel-chart">
-          <h2 class="panel-title">Mode Distribution</h2>
-          <div class="donut-wrap donut-wrap-large" id="donut-modes"></div>
-        </section>
-
-        <section class="panel panel-chart panel-rate">
+      <!-- Rate chart row (full width) -->
+      <div class="rate-row">
+        <section class="panel panel-rate">
           <h2 class="panel-title">QSOs / Hour (last 24h)</h2>
           <div class="rate-chart-wrap" id="rate-chart"></div>
         </section>
-
       </div>
 
     </div><!-- /view-warroom -->
