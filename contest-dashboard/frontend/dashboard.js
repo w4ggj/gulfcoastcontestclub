@@ -364,8 +364,14 @@ function renderDonut(containerId, data, labelKey, valueKey) {
   const total = data.reduce((s, d) => s + (d[valueKey] || 0), 0);
   if (!total) { wrap.innerHTML = '<span style="color:var(--dash-text-sub);font-size:0.8rem">No data</span>'; return; }
 
-  // Fixed logical coordinate space — CSS scales the SVG to fit
-  const V = 200, cx = 100, cy = 100, r = 76, inner = 42;
+  // Measure available height from the panel, minus title bar (~38px) and padding
+  const panel = wrap.closest('.panel');
+  const availH = panel ? Math.max(120, panel.clientHeight - 50) : 200;
+  const size = Math.min(availH, wrap.clientWidth * 0.45 || availH);
+
+  const cx = size / 2, cy = size / 2;
+  const r = size * 0.38, inner = size * 0.22;
+  const fs = Math.round(size * 0.12);
   let angle = -Math.PI / 2;
   let paths = '';
 
@@ -396,8 +402,8 @@ function renderDonut(containerId, data, labelKey, valueKey) {
   }).join('');
 
   wrap.innerHTML = `
-    <svg class="donut-svg" viewBox="0 0 ${V} ${V}" preserveAspectRatio="xMidYMid meet">${paths}
-      <text x="${cx}" y="${cy + 8}" text-anchor="middle" fill="#e8f5ed" font-size="22" font-weight="700" font-family="Barlow Condensed,sans-serif">${total}</text>
+    <svg class="donut-svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="flex-shrink:0">${paths}
+      <text x="${cx}" y="${cy + fs * 0.4}" text-anchor="middle" fill="#e8f5ed" font-size="${fs}" font-weight="700" font-family="Barlow Condensed,sans-serif">${total}</text>
     </svg>
     <div class="donut-legend">${legend}</div>`;
 }
