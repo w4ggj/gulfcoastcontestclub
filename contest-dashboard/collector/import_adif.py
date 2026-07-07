@@ -144,6 +144,7 @@ def main():
             print(f"  Error inserting {rec.get('CALL')}: {e}")
             errors += 1
 
+    con.commit()
     con.close()
     print(f"Done: {inserted} inserted/updated, {skipped} skipped, {errors} errors")
 
