@@ -282,6 +282,21 @@ def get_live_stats(conn: sqlite3.Connection, contest_id: int) -> dict:
         {base} ORDER BY qso_utc DESC LIMIT 20
     """, (contest_id,)).fetchall()
 
+    # Mode distribution
+    modes = conn.execute(f"""
+        SELECT mode, COUNT(*) as qsos
+        {base} AND mode IS NOT NULL AND mode != ''
+        GROUP BY mode ORDER BY qsos DESC
+    """, (contest_id,)).fetchall()
+
+    # QSOs per UTC hour (last 24 hours, for rate chart)
+    hourly = conn.execute(f"""
+        SELECT strftime('%H', qso_utc) as hour, COUNT(*) as qsos
+        {base}
+        AND qso_utc >= strftime('%Y-%m-%dT%H:%M:%SZ', 'now', '-24 hours')
+        GROUP BY hour ORDER BY hour
+    """, (contest_id,)).fetchall()
+
     return {
         "total_qsos": total,
         "rate_1h":    rate_1h,
@@ -290,6 +305,8 @@ def get_live_stats(conn: sqlite3.Connection, contest_id: int) -> dict:
         "stations":   [dict(r) for r in stations],
         "op_band":    [dict(r) for r in op_band],
         "recent":     [dict(r) for r in recent],
+        "modes":      [dict(r) for r in modes],
+        "hourly":     [dict(r) for r in hourly],
     }
 
 
