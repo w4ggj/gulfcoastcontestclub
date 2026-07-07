@@ -161,8 +161,8 @@
 /* ── Mid grid ─────────────────────────────────────────────────────────── */
 .mid-grid {
   display: grid;
-  grid-template-columns: 1fr 1.6fr;
-  gap: 1.25rem;
+  grid-template-columns: 1fr 1fr 1.4fr;
+  gap: 1rem;
   flex: 1;
   overflow: hidden;
   min-height: 0;
@@ -666,56 +666,27 @@ select.form-input { appearance: none; cursor: pointer; }
 }
 
 /* Charts row */
-.charts-row {
-  display: grid;
-  grid-template-columns: 1fr 2fr;
-  gap: 12px;
+/* Rate chart row */
+.rate-row {
   padding: 0 12px 12px;
-  min-height: 200px;
+  flex-shrink: 0;
 }
-.panel-chart { display: flex; flex-direction: column; }
+.panel-rate { min-height: 120px; }
 
-/* Donut chart — SVG uses aspect-ratio:1 and stretches to fill */
+/* Donut panels in mid-grid */
+.panel-bands-donut,
+.panel-modes-donut {
+  overflow: hidden;
+}
+
+/* Donut chart */
 .donut-wrap {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 18px;
   flex: 1;
   min-height: 0;
   padding: 4px 0;
-}
-.donut-wrap .donut-svg {
-  flex: 0 0 auto;
-  aspect-ratio: 1;
-  /* Fill the available height of the flex row */
-  height: 100%;
-  width: auto;
-  min-height: 100px;
-  max-height: 100%;
-  display: block;
-}
-
-/* Band panel: large, fills mid-grid left column */
-.panel-bands-donut {
-  overflow: hidden;
-}
-.panel-bands-donut .donut-wrap {
-  flex: 1;
-  gap: 28px;
-}
-.panel-bands-donut .donut-legend {
-  font-size: 1.1rem;
-  gap: 10px;
-}
-.panel-bands-donut .donut-swatch { width: 14px; height: 14px; }
-
-/* Mode donut in charts row */
-.panel-chart .donut-wrap {
-  flex: 1;
-}
-.panel-chart .donut-legend {
-  font-size: 0.92rem;
-  gap: 7px;
 }
 
 .donut-legend {
