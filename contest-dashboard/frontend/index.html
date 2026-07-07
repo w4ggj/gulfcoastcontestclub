@@ -84,15 +84,13 @@
         </div>
       </div>
 
-      <!-- Band + Station grid -->
+      <!-- Band donut + Station grid -->
       <div class="mid-grid">
 
-        <!-- Band breakdown -->
-        <section class="panel panel-bands">
-          <h2 class="panel-title">Bands</h2>
-          <div class="band-grid" id="band-grid">
-            <!-- populated by JS -->
-          </div>
+        <!-- Band distribution donut (replaces bar chart) -->
+        <section class="panel panel-bands-donut">
+          <h2 class="panel-title">Band Distribution</h2>
+          <div class="donut-wrap donut-wrap-large" id="donut-bands"></div>
         </section>
 
         <!-- Station panels -->
@@ -105,17 +103,12 @@
 
       </div>
 
-      <!-- Charts row -->
+      <!-- Charts row: mode donut + rate chart -->
       <div class="charts-row">
 
         <section class="panel panel-chart">
-          <h2 class="panel-title">Band Distribution</h2>
-          <div class="donut-wrap" id="donut-bands"></div>
-        </section>
-
-        <section class="panel panel-chart">
           <h2 class="panel-title">Mode Distribution</h2>
-          <div class="donut-wrap" id="donut-modes"></div>
+          <div class="donut-wrap donut-wrap-large" id="donut-modes"></div>
         </section>
 
         <section class="panel panel-chart panel-rate">

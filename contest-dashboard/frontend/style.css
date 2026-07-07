@@ -668,12 +668,12 @@ select.form-input { appearance: none; cursor: pointer; }
 /* Charts row */
 .charts-row {
   display: grid;
-  grid-template-columns: 1fr 1fr 2fr;
+  grid-template-columns: 1fr 2fr;
   gap: 12px;
   padding: 0 12px 12px;
 }
-.panel-chart { min-height: 180px; }
-.panel-rate  { /* wider */ }
+.panel-chart { min-height: 160px; }
+.panel-bands-donut { overflow: visible; }
 
 /* Donut chart */
 .donut-wrap {
@@ -681,14 +681,23 @@ select.form-input { appearance: none; cursor: pointer; }
   align-items: center;
   gap: 14px;
   padding: 8px 0;
+  flex: 1;
+}
+.donut-wrap-large {
+  gap: 20px;
 }
 .donut-wrap svg { flex-shrink: 0; }
+.donut-wrap-large svg { flex-shrink: 0; }
 .donut-legend {
   display: flex;
   flex-direction: column;
   gap: 5px;
   font-size: 0.78rem;
   font-family: 'Barlow Condensed', sans-serif;
+}
+.donut-wrap-large .donut-legend {
+  font-size: 0.95rem;
+  gap: 7px;
 }
 .donut-legend-item {
   display: flex;
@@ -702,6 +711,7 @@ select.form-input { appearance: none; cursor: pointer; }
   border-radius: 2px;
   flex-shrink: 0;
 }
+.donut-wrap-large .donut-swatch { width: 13px; height: 13px; }
 .donut-legend-label { color: var(--dash-text); font-weight: 600; }
 .donut-legend-val   { color: var(--dash-text-sub); }
 
