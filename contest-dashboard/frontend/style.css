@@ -144,7 +144,7 @@
 }
 .score-tile-val {
   font-family: var(--font-cond);
-  font-size: 2.6rem;
+  font-size: 3.2rem;
   font-weight: 900;
   color: var(--white);
   line-height: 1;
@@ -152,7 +152,7 @@
 }
 .score-tile.accent .score-tile-val { color: var(--dash-gold); }
 .score-tile-lbl {
-  font-size: 0.7rem;
+  font-size: 0.85rem;
   text-transform: uppercase;
   letter-spacing: 0.09em;
   color: var(--dash-text-sub);
@@ -180,7 +180,7 @@
 }
 .panel-title {
   font-family: var(--font-cond);
-  font-size: 0.8rem;
+  font-size: 1rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.12em;
@@ -205,7 +205,7 @@
 }
 .band-label {
   font-family: var(--font-cond);
-  font-size: 1.3rem;
+  font-size: 1.6rem;
   font-weight: 700;
   color: var(--dash-text);
 }
@@ -213,7 +213,7 @@
 .band-bar { position: absolute; left: 0; top: 0; bottom: 0; background: var(--green-mid); border-radius: 3px; transition: width 0.4s ease; min-width: 4px; }
 .band-count {
   font-family: var(--font-cond);
-  font-size: 1.3rem;
+  font-size: 1.6rem;
   font-weight: 600;
   color: var(--white);
   text-align: right;
@@ -235,25 +235,25 @@
 .station-card.active-run { border-left: 3px solid var(--dash-accent); }
 .station-name {
   font-family: var(--font-cond);
-  font-size: 1.15rem;
+  font-size: 1.4rem;
   font-weight: 700;
   color: var(--white);
 }
 .station-mode-band {
-  font-size: 0.8rem;
+  font-size: 1rem;
   color: var(--dash-text-sub);
   font-family: var(--font-cond);
 }
 .station-qsos {
   font-family: var(--font-cond);
-  font-size: 2rem;
+  font-size: 2.4rem;
   font-weight: 900;
   color: var(--dash-gold);
   line-height: 1;
   text-align: right;
 }
 .station-rate {
-  font-size: 0.7rem;
+  font-size: 0.85rem;
   color: var(--dash-text-sub);
   text-align: right;
 }
@@ -272,11 +272,11 @@
 }
 .lb-title {
   font-family: var(--font-cond);
-  font-size: 2rem;
+  font-size: 2.5rem;
   font-weight: 700;
   color: var(--white);
 }
-.lb-subtitle { font-size: 0.9rem; color: var(--dash-text-sub); }
+.lb-subtitle { font-size: 1.1rem; color: var(--dash-text-sub); }
 
 /* Two-column layout: large donut left, table right */
 .lb-body-grid {
@@ -305,7 +305,7 @@
   font-family: var(--font-cond);
 }
 .lb-table th {
-  font-size: 0.72rem;
+  font-size: 0.9rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--dash-text-sub);
@@ -321,15 +321,15 @@
 .lb-table tbody tr:hover { background: var(--dash-surface); }
 .lb-table tbody tr:first-child td { font-size: 1.1em; }
 
-.lb-rank { width: 2.5rem; color: var(--dash-text-sub); font-size: 0.9rem; }
-.lb-op { font-size: 1.1rem; font-weight: 700; color: var(--white); letter-spacing: 0.04em; }
-.lb-qsos { font-size: 1.3rem; font-weight: 900; color: var(--dash-gold); text-align: right; }
-.lb-bands { font-size: 0.8rem; color: var(--dash-text-sub); }
+.lb-rank { width: 2.5rem; color: var(--dash-text-sub); font-size: 1.1rem; }
+.lb-op { font-size: 1.45rem; font-weight: 700; color: var(--white); letter-spacing: 0.04em; }
+.lb-qsos { font-size: 1.65rem; font-weight: 900; color: var(--dash-gold); text-align: right; }
+.lb-bands { font-size: 0.9rem; color: var(--dash-text-sub); }
 
-.lb-table td { padding: 0.4rem 0.75rem; }
-.lb-table td.lb-rank { font-size: 0.95rem; color: var(--dash-text-sub); }
-.lb-table td.lb-op  { font-size: 1.1rem; }
-.lb-table td.lb-qsos { font-size: 1.25rem; }
+.lb-table td { padding: 0.55rem 0.9rem; }
+.lb-table td.lb-rank { font-size: 1.1rem; color: var(--dash-text-sub); }
+.lb-table td.lb-op  { font-size: 1.45rem; }
+.lb-table td.lb-qsos { font-size: 1.65rem; }
 
 /* Rank medal colors */
 .rank-1 td.lb-rank { color: #ffd700; }
@@ -726,7 +726,7 @@ select.form-input { appearance: none; cursor: pointer; }
   flex-direction: column;
   justify-content: center;
   gap: 6px;
-  font-size: 0.85rem;
+  font-size: 1.05rem;
   font-family: 'Barlow Condensed', sans-serif;
 }
 .donut-legend-item {
