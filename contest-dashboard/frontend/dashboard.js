@@ -90,8 +90,12 @@ function initSupabase() {
 
 async function loadFromSupabase(sb) {
   // Fetch live contest
-  const { data: contests } = await sb.from('contests').select('*').eq('status', 'live').limit(1);
-  if (!contests?.length) { showIdle(); return; }
+  let { data: contests } = await sb.from('contests').select('*').eq('status', 'live').limit(1);
+  if (!contests?.length) {
+    const { data: recent } = await sb.from('contests').select('*').eq('status', 'complete').order('end_utc', { ascending: false }).limit(1);
+    if (!recent?.length) { showIdle(); return; }
+    contests = recent;
+  }
   const contest = contests[0];
 
   const [contacts, snapshots] = await Promise.all([
