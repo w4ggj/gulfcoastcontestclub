@@ -89,7 +89,9 @@ CREATE TABLE IF NOT EXISTS score_snapshots (
     total_points    INTEGER,
     total_mults     INTEGER,
     score           INTEGER,
-    band_breakdown  TEXT   -- JSON: {"20m": {"qsos": 42, ...}, ...}
+    band_breakdown  TEXT,  -- JSON: {"20m": {"qsos": 42, ...}, ...}
+    bonus_points    INTEGER DEFAULT 0,
+    bonus_breakdown TEXT   -- JSON: [{"label": "...", "points": N}, ...]
 );
 
 CREATE TABLE IF NOT EXISTS stations (
