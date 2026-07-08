@@ -139,9 +139,14 @@ def init_db(conn: sqlite3.Connection) -> None:
 # ── Contests ───────────────────────────────────────────────────────────────
 
 def get_live_contest(conn: sqlite3.Connection) -> Optional[sqlite3.Row]:
-    return conn.execute(
+    row = conn.execute(
         "SELECT * FROM contests WHERE status='live' LIMIT 1"
     ).fetchone()
+    if row is None:
+        row = conn.execute(
+            "SELECT * FROM contests WHERE status='complete' ORDER BY end_utc DESC LIMIT 1"
+        ).fetchone()
+    return row
 
 
 def get_contest(conn: sqlite3.Connection, contest_id: int) -> Optional[sqlite3.Row]:
