@@ -525,6 +525,9 @@ function renderContestStats(root, meta, contacts, snapshot) {
   const score  = snapshot?.score ?? null;
   const mults  = snapshot?.total_mults ?? null;
   const points = snapshot?.total_points ?? contacts.reduce((s,c) => s + (c.points||0), 0);
+  const bonus  = snapshot?.bonus_points ?? 0;
+  const bonusBreakdown = snapshot?.bonus_breakdown ?? null;
+  const totalScore = score != null ? score + bonus : null;
 
   // Rate — QSOs in last 60 min
   const oneHourAgo = new Date(Date.now() - 3600000).toISOString();
@@ -550,8 +553,16 @@ function renderContestStats(root, meta, contacts, snapshot) {
           <div class="stat-tile-lbl">QSOs</div>
         </div>
         <div class="stat-tile accent">
+          <div class="stat-tile-val">${totalScore != null ? fmt(totalScore) : '—'}</div>
+          <div class="stat-tile-lbl">Total Score</div>
+        </div>
+        <div class="stat-tile">
           <div class="stat-tile-val">${score != null ? fmt(score) : '—'}</div>
-          <div class="stat-tile-lbl">Score</div>
+          <div class="stat-tile-lbl">QSO Score</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-tile-val">${fmt(bonus)}</div>
+          <div class="stat-tile-lbl">Bonus Pts</div>
         </div>
         <div class="stat-tile">
           <div class="stat-tile-val">${mults != null ? fmt(mults) : '—'}</div>
@@ -651,6 +662,22 @@ function renderContestStats(root, meta, contacts, snapshot) {
           </tbody>
         </table>
       </div>
+
+      <!-- Bonus Points -->
+      ${(bonus > 0 && bonusBreakdown) ? `
+      <div class="stats-card" style="margin-bottom:1.5rem;">
+        <div class="stats-card-title">Bonus Points — ${fmt(bonus)} total</div>
+        <table class="band-table">
+          <thead><tr><th>Category</th><th style="text-align:right">Points</th></tr></thead>
+          <tbody>
+            ${bonusBreakdown.map(b => `
+              <tr>
+                <td style="padding:0.4rem 0.5rem;">${esc(b.label)}</td>
+                <td style="text-align:right;padding:0.4rem 0.5rem;font-weight:600;">+${fmt(b.points)}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>` : ''}
 
       <!-- Recent QSOs -->
       <div class="stats-card" style="margin-bottom:2rem;">

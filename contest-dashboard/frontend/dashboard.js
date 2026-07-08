@@ -270,15 +270,19 @@ function renderStats() {
 
 function renderScore() {
   const sc = state.score;
-  const score  = sc?.score       ?? sc?.total_qsos ? (sc.total_points * sc.total_mults) : null;
-  const mults  = sc?.total_mults ?? sc?.mults  ?? null;
-  const pts    = sc?.total_points ?? sc?.points ?? null;
-  const qsos   = sc?.total_qsos  ?? sc?.qsos   ?? null;
+  const qsoScore = sc?.score ?? (sc?.total_points && sc?.total_mults ? sc.total_points * sc.total_mults : null);
+  const mults    = sc?.total_mults ?? sc?.mults  ?? null;
+  const pts      = sc?.total_points ?? sc?.points ?? null;
+  const qsos     = sc?.total_qsos  ?? sc?.qsos   ?? null;
+  const bonus    = sc?.bonus_points ?? 0;
+  const total    = qsoScore != null ? qsoScore + bonus : null;
 
-  setText('hdr-score',  score  != null ? fmt(score)  : '—');
-  setText('sr-score',   score  != null ? fmt(score)  : '—');
-  setText('sr-mults',   mults  != null ? fmt(mults)  : '—');
-  setText('sr-points',  pts    != null ? fmt(pts)    : '—');
+  setText('hdr-score',  total    != null ? fmt(total)    : '—');
+  setText('sr-total',   total    != null ? fmt(total)    : '—');
+  setText('sr-score',   qsoScore != null ? fmt(qsoScore) : '—');
+  setText('sr-bonus',   fmt(bonus));
+  setText('sr-mults',   mults    != null ? fmt(mults)    : '—');
+  setText('sr-points',  pts      != null ? fmt(pts)      : '—');
   if (qsos != null) setText('sr-qsos', fmt(qsos));
 }
 
