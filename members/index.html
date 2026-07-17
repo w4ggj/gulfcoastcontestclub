@@ -25,6 +25,7 @@
     }
     .pin-gate-logo {
       height: 72px; width: auto; display: block; margin: 0 auto 1.25rem;
+      mix-blend-mode: multiply;
     }
     .pin-gate-title {
       font-family: 'Barlow Condensed', sans-serif;
@@ -46,6 +47,7 @@
       outline: none; transition: border-color 0.15s;
       letter-spacing: 0.15em;
     }
+    .pin-input-wrap input::placeholder { letter-spacing: normal; }
     .pin-input-wrap input:focus { border-color: var(--green-primary); }
     .pin-input-wrap input.pin-err { border-color: #b3261e; }
     .pin-error-msg {
