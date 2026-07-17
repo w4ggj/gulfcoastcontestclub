@@ -9,6 +9,35 @@
   <meta name="description" content="Share your photos and videos from Gulf Coast Contest Club events." />
   <link rel="stylesheet" href="/assets/css/style.css" />
   <style>
+    /* ── PIN GATE ── */
+    .pin-gate-overlay {
+      position: fixed; inset: 0; z-index: 9999;
+      background: var(--green-dark);
+      display: flex; align-items: center; justify-content: center;
+      padding: 1.5rem;
+    }
+    .pin-gate-card {
+      background: var(--white); border-radius: 16px;
+      padding: 2.5rem 2rem; max-width: 380px; width: 100%;
+      text-align: center; box-shadow: 0 8px 40px rgba(0,0,0,0.35);
+    }
+    .pin-gate-logo { height: 72px; width: auto; display: block; margin: 0 auto 1.25rem; }
+    .pin-gate-title {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 1.6rem; font-weight: 700; color: var(--green-dark); margin-bottom: 0.35rem;
+    }
+    .pin-gate-sub { font-size: 14px; color: var(--text-muted); margin-bottom: 1.75rem; line-height: 1.5; }
+    .pin-input-wrap { display: flex; gap: 10px; margin-bottom: 1rem; }
+    .pin-input-wrap input {
+      flex: 1; padding: 11px 14px; border: 2px solid var(--border-dark); border-radius: 8px;
+      font-size: 16px; font-family: 'Barlow', sans-serif; color: var(--text-dark);
+      background: var(--off-white); outline: none; transition: border-color 0.15s; letter-spacing: 0.15em;
+    }
+    .pin-input-wrap input:focus { border-color: var(--green-primary); }
+    .pin-input-wrap input.pin-err { border-color: #b3261e; }
+    .pin-error-msg { font-size: 13px; color: #b3261e; margin-top: -0.25rem; margin-bottom: 0.75rem; display: none; }
+    .pin-hint { font-size: 12px; color: var(--text-light); margin-top: 1.25rem; line-height: 1.5; }
+
     .upload-wrap { max-width: 680px; margin: 0 auto; }
 
     .dropzone {
@@ -123,6 +152,28 @@
   </style>
 </head>
 <body>
+
+<!-- ── PIN GATE ── -->
+<div id="pinGate" class="pin-gate-overlay">
+  <div class="pin-gate-card">
+    <img src="/assets/logo.webp" alt="GCCC Logo" class="pin-gate-logo" />
+    <div class="pin-gate-title">GCCC Members Area</div>
+    <p class="pin-gate-sub">Photo &amp; video uploads are for members only.<br>Enter the member PIN to continue.</p>
+    <div class="pin-input-wrap">
+      <input type="password" id="pinInput" placeholder="Member PIN"
+             maxlength="30" autocomplete="off" inputmode="numeric" />
+      <button type="button" id="pinSubmit" class="btn btn-green"
+              style="white-space: nowrap; padding: 11px 18px;">Enter →</button>
+    </div>
+    <div id="pinError" class="pin-error-msg">
+      Incorrect PIN. Check your Discord or ask a club officer.
+    </div>
+    <p class="pin-hint">Members receive the PIN via the club Discord.<br>
+      <a href="/members/" style="color: var(--green-primary);">← Members hub</a></p>
+  </div>
+</div>
+
+<div id="pageContent" style="display:none">
 
 <nav class="site-nav">
   <div class="nav-inner">
@@ -584,6 +635,46 @@
   dropzone.addEventListener('drop', function (e) {
     if (e.dataTransfer && e.dataTransfer.files) addFiles(e.dataTransfer.files);
   });
+</script>
+
+</div><!-- /#pageContent -->
+
+<script>
+  /* ── PIN GATE ──
+     Uses the same session key as /members/ so one PIN unlocks both pages. */
+  var ACCESS_PIN  = "7300";   // Must match ACCESS_PIN in /members/index.html
+  var SESSION_KEY = 'gccc_member_unlocked';
+
+  function unlock() {
+    sessionStorage.setItem(SESSION_KEY, '1');
+    document.getElementById('pinGate').style.display = 'none';
+    document.getElementById('pageContent').style.display = '';
+  }
+
+  if (sessionStorage.getItem(SESSION_KEY) === '1') {
+    document.getElementById('pinGate').style.display = 'none';
+    document.getElementById('pageContent').style.display = '';
+  }
+
+  document.getElementById('pinSubmit').addEventListener('click', checkPin);
+  document.getElementById('pinInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') checkPin();
+  });
+
+  function checkPin() {
+    var val = document.getElementById('pinInput').value.trim();
+    var errEl = document.getElementById('pinError');
+    var inputEl = document.getElementById('pinInput');
+    if (val === ACCESS_PIN) {
+      inputEl.classList.remove('pin-err');
+      errEl.style.display = 'none';
+      unlock();
+    } else {
+      inputEl.classList.add('pin-err');
+      errEl.style.display = 'block';
+      inputEl.select();
+    }
+  }
 </script>
 
 </body>
