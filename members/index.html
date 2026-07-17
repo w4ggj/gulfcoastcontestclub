@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Keep this page unlisted: not in nav, not indexed by search engines -->
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Members Area — Gulf Coast Contest Club</title>
+  <link rel="stylesheet" href="/assets/css/style.css" />
+  <style>
+    /* ── PIN GATE ── */
+    .pin-gate-overlay {
+      position: fixed; inset: 0; z-index: 9999;
+      background: var(--green-dark);
+      display: flex; align-items: center; justify-content: center;
+      padding: 1.5rem;
+    }
+    .pin-gate-card {
+      background: var(--white);
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      max-width: 380px; width: 100%;
+      text-align: center;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.35);
+    }
+    .pin-gate-logo {
+      height: 72px; width: auto; display: block; margin: 0 auto 1.25rem;
+    }
+    .pin-gate-title {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 1.6rem; font-weight: 700;
+      color: var(--green-dark); margin-bottom: 0.35rem;
+    }
+    .pin-gate-sub {
+      font-size: 14px; color: var(--text-muted);
+      margin-bottom: 1.75rem; line-height: 1.5;
+    }
+    .pin-input-wrap {
+      display: flex; gap: 10px; margin-bottom: 1rem;
+    }
+    .pin-input-wrap input {
+      flex: 1; padding: 11px 14px;
+      border: 2px solid var(--border-dark); border-radius: 8px;
+      font-size: 16px; font-family: 'Barlow', sans-serif;
+      color: var(--text-dark); background: var(--off-white);
+      outline: none; transition: border-color 0.15s;
+      letter-spacing: 0.15em;
+    }
+    .pin-input-wrap input:focus { border-color: var(--green-primary); }
+    .pin-input-wrap input.pin-err { border-color: #b3261e; }
+    .pin-error-msg {
+      font-size: 13px; color: #b3261e; margin-top: -0.25rem;
+      margin-bottom: 0.75rem; display: none;
+    }
+    .pin-hint {
+      font-size: 12px; color: var(--text-light);
+      margin-top: 1.25rem; line-height: 1.5;
+    }
+
+    /* ── UPLOAD SECTION ── */
+    .upload-wrap { max-width: 680px; margin: 0 auto; }
+    .dropzone {
+      border: 2px dashed var(--border-dark); border-radius: 12px;
+      background: var(--white); padding: 2.5rem 1.5rem;
+      text-align: center; cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .dropzone:hover, .dropzone.dragover {
+      border-color: var(--green-primary); background: var(--green-tint);
+    }
+    .dropzone-icon { font-size: 2.6rem; line-height: 1; margin-bottom: 0.75rem; }
+    .dropzone-title {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 1.3rem; font-weight: 700;
+      color: var(--text-dark); margin-bottom: 4px;
+    }
+    .dropzone-hint { font-size: 14px; color: var(--text-muted); }
+    .file-list { margin-top: 1.5rem; display: flex; flex-direction: column; gap: 10px; }
+    .file-row {
+      display: flex; align-items: center; gap: 12px;
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: 8px; padding: 10px 14px; font-size: 14px;
+    }
+    .file-row .fname {
+      flex: 1; min-width: 0; overflow: hidden;
+      text-overflow: ellipsis; white-space: nowrap; color: var(--text-dark);
+    }
+    .file-row .fsize { color: var(--text-light); font-size: 12px; white-space: nowrap; }
+    .file-row .fstatus { font-size: 12px; font-weight: 600; white-space: nowrap; }
+    .fstatus.pending   { color: var(--text-light); }
+    .fstatus.uploading { color: var(--green-mid); }
+    .fstatus.done      { color: var(--green-primary); }
+    .fstatus.error     { color: #b3261e; }
+    .file-row .fremove {
+      background: none; border: none; cursor: pointer;
+      color: var(--text-light); font-size: 18px; line-height: 1; padding: 0 4px;
+    }
+    .file-row .fremove:hover { color: #b3261e; }
+    .progress-track {
+      height: 4px; background: var(--border); border-radius: 2px;
+      overflow: hidden; margin-top: 6px; width: 100%;
+    }
+    .progress-bar { height: 100%; width: 0; background: var(--green-light); transition: width 0.2s; }
+
+    /* ── BANNERS ── */
+    .banner {
+      border-radius: 8px; padding: 12px 14px; font-size: 14px; margin-bottom: 1.25rem;
+    }
+    .banner.warn { background: #fff4e5; color: #8a5300; border: 1px solid #ffd8a8; }
+    .banner.ok   { background: var(--green-tint); color: var(--green-dark); border: 1px solid var(--green-muted); }
+    .banner.err  { background: #fdecea; color: #8a1c13; border: 1px solid #f5c6c0; }
+    .upload-note {
+      font-size: 13px; color: var(--text-muted);
+      background: var(--green-tint); border-radius: 8px;
+      padding: 12px 14px; margin-top: 1.25rem;
+    }
+
+    /* ── WISHLIST BOARD ── */
+    .wishlist-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1rem; margin-top: 1.5rem;
+    }
+    .wish-card {
+      background: #fffde7; border: 1px solid #f9e02e33;
+      border-radius: 10px; padding: 1rem 1.1rem;
+      position: relative;
+    }
+    .wish-card-tag {
+      display: inline-block; font-size: 11px; font-weight: 600;
+      background: var(--green-tint); color: var(--green-dark);
+      border-radius: 4px; padding: 2px 7px; margin-bottom: 8px;
+      text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .wish-card-text {
+      font-size: 14px; color: var(--text-dark); line-height: 1.5;
+    }
+    .wish-card-fulfilled {
+      background: var(--green-tint);
+      border-color: var(--green-muted);
+    }
+    .wish-check {
+      position: absolute; top: 10px; right: 10px;
+      color: var(--green-primary); font-size: 16px;
+    }
+
+    /* ── CATEGORY ICONS ── */
+    .cat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 1rem; margin-top: 1.25rem;
+    }
+    .cat-card {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: 10px; padding: 1.1rem 1rem;
+      text-align: center; cursor: pointer;
+      transition: box-shadow 0.15s, border-color 0.15s;
+      text-decoration: none; color: inherit;
+    }
+    .cat-card:hover {
+      border-color: var(--green-primary);
+      box-shadow: 0 2px 12px rgba(26,92,58,0.12);
+      text-decoration: none;
+    }
+    .cat-card-icon { font-size: 2rem; line-height: 1; margin-bottom: 0.5rem; }
+    .cat-card-label {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 14px; font-weight: 600; color: var(--text-dark);
+    }
+
+    /* ── MISC ── */
+    .hidden { display: none; }
+    .section-alt { background: var(--white); }
+    .form-row { display: flex; gap: 1rem; flex-wrap: wrap; }
+    .form-row .form-group { flex: 1; min-width: 180px; }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════
+     PIN GATE — covers the whole page until unlocked
+═══════════════════════════════════════════════════ -->
+<div id="pinGate" class="pin-gate-overlay">
+  <div class="pin-gate-card">
+    <img src="/assets/logo.webp" alt="GCCC Logo" class="pin-gate-logo" />
+    <div class="pin-gate-title">GCCC Members Area</div>
+    <p class="pin-gate-sub">Contest resources, documents, and club uploads.<br>Enter the member PIN to continue.</p>
+
+    <div class="pin-input-wrap">
+      <input type="password" id="pinInput" placeholder="Member PIN"
+             maxlength="30" autocomplete="off" inputmode="numeric" />
+      <button type="button" id="pinSubmit" class="btn btn-green"
+              style="white-space: nowrap; padding: 11px 18px;">Enter →</button>
+    </div>
+    <div id="pinError" class="pin-error-msg">
+      Incorrect PIN. Check your Discord or ask a club officer.
+    </div>
+
+    <p class="pin-hint">Members receive the PIN via the club Discord.<br>This page does not appear in the site navigation.</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     MEMBERS CONTENT — shown after PIN unlock
+═══════════════════════════════════════════════════ -->
+<div id="membersContent" style="display:none">
+
+<nav class="site-nav">
+  <div class="nav-inner">
+    <a href="/index.html" class="nav-brand">
+      <img src="/assets/logo.webp" alt="GCCC Logo" style="height: 44px; width: auto; display: block;" />
+      <div class="nav-brand-text">
+        <span class="nav-brand-call">GCCC</span>
+        <span class="nav-brand-name">Gulf Coast Contest Club</span>
+      </div>
+    </a>
+    <button class="nav-toggle" aria-label="Toggle menu"
+            onclick="document.querySelector('.nav-links').classList.toggle('open')">
+      <span></span><span></span><span></span>
+    </button>
+    <ul class="nav-links">
+      <li><a href="/index.html">Home</a></li>
+      <li><a href="/about.html">About</a></li>
+      <li><a href="/calendar.html">Calendar</a></li>
+      <li><a href="/results.html">Results</a></li>
+      <li><a href="/news.html">News</a></li>
+      <li><a href="/photos.html">Photos</a></li>
+      <li><a href="/contact.html">Contact</a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="page-hero">
+  <div class="container">
+    <h1>Members Resource Hub</h1>
+    <p>Contest documents, operating guides, and club resources — shared by and for GCCC members.</p>
+  </div>
+</div>
+
+<!-- ── SECTION 1: Document Library ── -->
+<div class="section">
+  <div class="container">
+
+    <div class="section-label">Library</div>
+    <div class="section-title">Contest Resources</div>
+    <p class="section-subtitle">Documents contributed by club members — rules summaries, exchange guides, score sheets, and more.</p>
+
+    <!-- Banner shown when Drive folder URL isn't configured yet -->
+    <div id="libraryNotConfigured" class="banner warn hidden">
+      <strong>Document library not yet linked.</strong> The site owner needs to paste a Google Drive
+      folder share link into the <code>DOCS_VIEW_URL</code> variable in this page. See the comment
+      at the top of the &lt;script&gt; block for details.
+    </div>
+
+    <!-- Drive folder link (shown when configured) -->
+    <div id="libraryLink" class="hidden" style="margin-bottom: 1.75rem;">
+      <a id="libraryBtn" href="#" target="_blank" rel="noopener"
+         class="btn btn-green" style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 22px;">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M2 3h12v10H2V3z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+          <path d="M2 6h12" stroke="currentColor" stroke-width="1.5"/>
+        </svg>
+        Browse Documents on Google Drive →
+      </a>
+    </div>
+
+    <!-- Category quick reference -->
+    <div class="cat-grid" id="catGrid">
+      <div class="cat-card" onclick="openLibrary()">
+        <div class="cat-card-icon">📋</div>
+        <div class="cat-card-label">Contest Rules</div>
+      </div>
+      <div class="cat-card" onclick="openLibrary()">
+        <div class="cat-card-icon">📊</div>
+        <div class="cat-card-label">Score Sheets</div>
+      </div>
+      <div class="cat-card" onclick="openLibrary()">
+        <div class="cat-card-icon">🎙️</div>
+        <div class="cat-card-label">Operating Guides</div>
+      </div>
+      <div class="cat-card" onclick="openLibrary()">
+        <div class="cat-card-icon">📡</div>
+        <div class="cat-card-label">Contest Logs</div>
+      </div>
+      <div class="cat-card" onclick="openLibrary()">
+        <div class="cat-card-icon">🔖</div>
+        <div class="cat-card-label">Exchange Refs</div>
+      </div>
+      <div class="cat-card" onclick="openLibrary()">
+        <div class="cat-card-icon">🛠️</div>
+        <div class="cat-card-label">N1MM &amp; Software</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── SECTION 2: Upload a Document ── -->
+<div class="section section-alt">
+  <div class="container">
+    <div class="upload-wrap">
+
+      <div class="section-label">Contribute</div>
+      <div class="section-title" style="margin-bottom: 0.25rem;">Upload a Contest Document</div>
+      <p style="color: var(--text-muted); margin-bottom: 1.75rem; font-size: 15px;">
+        Share a resource with the club — PDF rules, score sheets, exchange guides, Cabrillo templates,
+        operating notes, ADIF logs, anything useful. Files go to the club's shared Drive.
+      </p>
+
+      <div id="uploadNotConfigured" class="banner warn hidden">
+        <strong>Uploads aren't switched on yet.</strong> The site owner needs to deploy the companion
+        Apps Script and paste the URL into <code>DOCS_UPLOAD_ENDPOINT</code> in this page.
+        See the comments at the top of the &lt;script&gt; block.
+      </div>
+
+      <div id="uploadGlobalBanner" class="banner ok hidden"></div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="uploader">Your callsign <span style="color: #b3261e; font-weight: 600;">*</span></label>
+          <input type="text" id="uploader" placeholder="e.g. W4ABC" maxlength="20" required />
+        </div>
+        <div class="form-group">
+          <label for="docCategory">Category</label>
+          <select id="docCategory">
+            <option value="Contest Rules">Contest Rules</option>
+            <option value="Score Sheet">Score Sheet</option>
+            <option value="Operating Guide">Operating Guide</option>
+            <option value="Exchange Reference">Exchange Reference</option>
+            <option value="Contest Log">Contest Log (Cabrillo/ADIF)</option>
+            <option value="N1MM / Software">N1MM / Software Config</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-top: 1rem;">
+        <label for="docNotes">Brief description <span style="color: var(--text-light); font-weight: 400; font-size: 13px;">(optional)</span></label>
+        <input type="text" id="docNotes" placeholder="e.g. CQ WW 2025 exchange quick-ref card" maxlength="120" />
+      </div>
+
+      <div id="docDropzone" class="dropzone" tabindex="0" role="button"
+           aria-label="Choose documents to upload" style="margin-top: 1.25rem;">
+        <div class="dropzone-icon">📄</div>
+        <div class="dropzone-title">Tap to choose, or drag files here</div>
+        <div class="dropzone-hint">PDF · DOC · TXT · Cabrillo · ADIF · spreadsheets · images</div>
+        <input type="file" id="docFileInput"
+               accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.adi,.adif,.cbr,.cabrillo,.log,image/*"
+               multiple class="hidden" />
+      </div>
+
+      <div id="docFileList" class="file-list"></div>
+
+      <button id="docUploadBtn" type="button" class="btn btn-green hidden"
+              style="width: 100%; padding: 13px; font-size: 15px; margin-top: 1.5rem;">
+        Upload <span id="docUploadCount"></span> →
+      </button>
+
+      <div class="upload-note" style="margin-top: 1.25rem;">
+        <strong>Note:</strong> Files land in the club's members-only Google Drive folder.
+        Other members will be able to view and download them. Tag files with your callsign
+        in the description so the club knows who contributed.
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ── SECTION 3: Wishlist Board ── -->
+<div class="section">
+  <div class="container">
+
+    <div class="section-label">Wishlist</div>
+    <div class="section-title">Resource Requests</div>
+    <p class="section-subtitle">Documents and resources the club would love to have. Got one? Upload it above. Got a request? Add it below.</p>
+
+    <!-- Wishlist cards — edit these in HTML to add/remove/fulfill items -->
+    <div class="wishlist-grid">
+
+      <div class="wish-card">
+        <span class="wish-card-tag">Contest Rules</span>
+        <div class="wish-card-text">CQ WW SSB/CW exchange reference card — quick-ref PDF for mult and exchange format</div>
+      </div>
+
+      <div class="wish-card">
+        <span class="wish-card-tag">Operating Guide</span>
+        <div class="wish-card-text">NAQP operating strategy guide — band change rules, bonus station coordination</div>
+      </div>
+
+      <div class="wish-card">
+        <span class="wish-card-tag">Exchange Ref</span>
+        <div class="wish-card-text">Florida QSO Party county-by-county exchange list and bonus station map</div>
+      </div>
+
+      <div class="wish-card">
+        <span class="wish-card-tag">N1MM / Software</span>
+        <div class="wish-card-text">N1MM+ custom contest files and function-key macros used at NE2CC</div>
+      </div>
+
+      <div class="wish-card">
+        <span class="wish-card-tag">Operating Guide</span>
+        <div class="wish-card-text">ARRL Sweepstakes CW — QTC format quick-reference and serial number tracking sheet</div>
+      </div>
+
+      <div class="wish-card">
+        <span class="wish-card-tag">Score Sheet</span>
+        <div class="wish-card-text">Multi-op score tracking spreadsheet — bands × modes with running totals</div>
+      </div>
+
+    </div>
+
+    <div style="margin-top: 1.75rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+      <a id="wishlistFormBtn" href="#" target="_blank" rel="noopener" class="btn btn-green"
+         style="display: inline-flex; align-items: center; gap: 8px;">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+          <path d="M7.5 2v11M2 7.5h11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        Submit a request
+      </a>
+      <span id="wishlistFormFallback" class="hidden"
+            style="font-size: 13px; color: var(--text-muted);">
+        — or post in <strong>#resources</strong> on Discord
+      </span>
+    </div>
+
+  </div>
+</div>
+
+<footer class="site-footer">
+  <div class="footer-call">GCCC</div>
+  <div class="footer-name">Gulf Coast Contest Club · Redington Beach, Florida</div>
+  <ul class="footer-links">
+    <li><a href="/index.html">Home</a></li>
+    <li><a href="/about.html">About</a></li>
+    <li><a href="/calendar.html">Calendar</a></li>
+    <li><a href="/results.html">Results</a></li>
+    <li><a href="/news.html">News</a></li>
+    <li><a href="/photos.html">Photos</a></li>
+    <li><a href="/contact.html">Contact</a></li>
+  </ul>
+  <div class="footer-copy">73 de NE2CC &nbsp;·&nbsp; &copy; 2026 Gulf Coast Contest Club &nbsp;·&nbsp; Members only</div>
+</footer>
+
+</div><!-- /#membersContent -->
+
+<script>
+  /* ============================================================
+     CONFIGURATION — set these four values and you're done.
+
+     ACCESS_PIN
+       The PIN members enter to access this page.
+       Change this from the default and share it with members via
+       Discord or email. (Note: the source code is on GitHub, so
+       anyone who finds the repo can see this value — same
+       "unlisted URL" approach as the /upload page.)
+
+     DOCS_UPLOAD_ENDPOINT
+       The deployed URL of your Apps Script for document uploads.
+       Deploy members/google-apps-script-docs.gs as a new web app
+       in the same Google Account used for photo uploads.
+       It looks like: https://script.google.com/macros/s/AKfy.../exec
+
+     DOCS_VIEW_URL
+       A Google Drive folder "Anyone with link — Viewer" share URL.
+       This is the folder where uploaded docs land (after the Apps
+       Script moves them from staging).
+       e.g.: https://drive.google.com/drive/folders/FOLDERID?usp=sharing
+
+     WISHLIST_FORM_URL
+       A Google Form "Submit a request" link.
+       Create a simple 2-field form (callsign + description) and
+       paste the share URL here.
+       If left as the placeholder, members see a "post on Discord" fallback.
+  ============================================================ */
+  var ACCESS_PIN          = "7300";
+  var DOCS_UPLOAD_ENDPOINT = "PASTE_YOUR_DOCS_APPS_SCRIPT_URL_HERE";
+  var DOCS_VIEW_URL        = "PASTE_YOUR_GOOGLE_DRIVE_FOLDER_URL_HERE";
+  var WISHLIST_FORM_URL    = "PASTE_YOUR_GOOGLE_FORM_URL_HERE";
+
+  /* ── PIN GATE ── */
+  var SESSION_KEY = 'gccc_member_unlocked';
+
+  function unlock() {
+    sessionStorage.setItem(SESSION_KEY, '1');
+    document.getElementById('pinGate').style.display = 'none';
+    document.getElementById('membersContent').style.display = '';
+    initPage();
+  }
+
+  // Skip the gate if already unlocked this session.
+  if (sessionStorage.getItem(SESSION_KEY) === '1') {
+    document.getElementById('pinGate').style.display = 'none';
+    document.getElementById('membersContent').style.display = '';
+  }
+
+  document.getElementById('pinSubmit').addEventListener('click', checkPin);
+  document.getElementById('pinInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') checkPin();
+  });
+
+  function checkPin() {
+    var val = document.getElementById('pinInput').value.trim();
+    var errEl = document.getElementById('pinError');
+    var inputEl = document.getElementById('pinInput');
+    if (val === ACCESS_PIN) {
+      inputEl.classList.remove('pin-err');
+      errEl.style.display = 'none';
+      unlock();
+    } else {
+      inputEl.classList.add('pin-err');
+      errEl.style.display = 'block';
+      inputEl.select();
+    }
+  }
+
+  /* ── PAGE INIT (runs after unlock) ── */
+  function initPage() {
+    // Library section
+    var notConfigured = DOCS_VIEW_URL.indexOf('PASTE_') === 0;
+    if (notConfigured) {
+      document.getElementById('libraryNotConfigured').classList.remove('hidden');
+    } else {
+      document.getElementById('libraryLink').classList.remove('hidden');
+      document.getElementById('libraryBtn').href = DOCS_VIEW_URL;
+    }
+
+    // Upload section
+    if (DOCS_UPLOAD_ENDPOINT.indexOf('PASTE_') === 0) {
+      document.getElementById('uploadNotConfigured').classList.remove('hidden');
+    }
+
+    // Wishlist form
+    if (WISHLIST_FORM_URL.indexOf('PASTE_') === 0) {
+      document.getElementById('wishlistFormBtn').style.display = 'none';
+      document.getElementById('wishlistFormFallback').classList.remove('hidden');
+    } else {
+      document.getElementById('wishlistFormBtn').href = WISHLIST_FORM_URL;
+    }
+
+    wireUpload();
+  }
+
+  // Run init if we were already unlocked on page load.
+  if (sessionStorage.getItem(SESSION_KEY) === '1') initPage();
+
+  function openLibrary() {
+    if (DOCS_VIEW_URL && DOCS_VIEW_URL.indexOf('PASTE_') !== 0) {
+      window.open(DOCS_VIEW_URL, '_blank', 'noopener');
+    }
+  }
+
+  /* ── DOCUMENT UPLOAD ── */
+  function wireUpload() {
+    var dropzone    = document.getElementById('docDropzone');
+    var fileInput   = document.getElementById('docFileInput');
+    var fileListEl  = document.getElementById('docFileList');
+    var uploadBtn   = document.getElementById('docUploadBtn');
+    var uploadCnt   = document.getElementById('docUploadCount');
+    var globalBanner = document.getElementById('uploadGlobalBanner');
+    var queue = [];
+
+    function fmtSize(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1048576) return (bytes / 1024).toFixed(0) + ' KB';
+      return (bytes / 1048576).toFixed(1) + ' MB';
+    }
+
+    function setStatus(item, text, cls) {
+      item.status.textContent = text;
+      item.status.className = 'fstatus ' + cls;
+    }
+
+    function refreshButton() {
+      var remaining = queue.filter(function(q) { return !q.done; }).length;
+      if (remaining > 0) {
+        uploadBtn.classList.remove('hidden');
+        uploadCnt.textContent = remaining + (remaining === 1 ? ' file' : ' files');
+      } else {
+        uploadBtn.classList.add('hidden');
+      }
+    }
+
+    function addFiles(files) {
+      Array.prototype.forEach.call(files, function(file) {
+        var row = document.createElement('div');
+        row.className = 'file-row';
+        var info = document.createElement('div');
+        info.style.flex = '1'; info.style.minWidth = '0';
+        var top = document.createElement('div');
+        top.style.display = 'flex'; top.style.gap = '10px'; top.style.alignItems = 'baseline';
+        var name = document.createElement('span'); name.className = 'fname'; name.textContent = file.name;
+        var size = document.createElement('span'); size.className = 'fsize'; size.textContent = fmtSize(file.size);
+        top.appendChild(name); top.appendChild(size);
+        var track = document.createElement('div'); track.className = 'progress-track';
+        var bar = document.createElement('div'); bar.className = 'progress-bar';
+        track.appendChild(bar);
+        info.appendChild(top); info.appendChild(track);
+        var status = document.createElement('span'); status.className = 'fstatus pending';
+        var remove = document.createElement('button');
+        remove.className = 'fremove'; remove.type = 'button'; remove.innerHTML = '&times;';
+        remove.setAttribute('aria-label', 'Remove ' + file.name);
+        row.appendChild(info); row.appendChild(status); row.appendChild(remove);
+        fileListEl.appendChild(row);
+        var item = { file: file, row: row, bar: bar, status: status, done: false };
+        setStatus(item, 'Ready', 'pending');
+        remove.addEventListener('click', function() {
+          var i = queue.indexOf(item);
+          if (i > -1) queue.splice(i, 1);
+          row.remove(); refreshButton();
+        });
+        queue.push(item);
+      });
+      refreshButton();
+    }
+
+    // JSONP — same approach as the photo upload page (Apps Script can't send CORS headers).
+    var jsonpSeq = 0;
+    function startSession(item, uploader, category, notes) {
+      return new Promise(function(resolve, reject) {
+        var cbName = 'gcccDocs_' + (++jsonpSeq) + '_' + Date.now();
+        var script = document.createElement('script');
+        function cleanup() {
+          try { delete window[cbName]; } catch(e) { window[cbName] = undefined; }
+          if (script.parentNode) script.parentNode.removeChild(script);
+        }
+        var timer = setTimeout(function() { cleanup(); reject(new Error('Timed out.')); }, 30000);
+        window[cbName] = function(data) { clearTimeout(timer); cleanup(); resolve(data); };
+        script.onerror = function() { clearTimeout(timer); cleanup(); reject(new Error('Could not reach upload service.')); };
+        var label = '[' + encodeURIComponent(uploader) + '][' + encodeURIComponent(category) + ']';
+        var qs = '?callback=' + encodeURIComponent(cbName)
+               + '&filename=' + encodeURIComponent(item.file.name)
+               + '&mimeType=' + encodeURIComponent(item.file.type || 'application/octet-stream')
+               + '&size=' + encodeURIComponent(item.file.size)
+               + '&uploader=' + label
+               + '&notes=' + encodeURIComponent(notes || '');
+        script.src = DOCS_UPLOAD_ENDPOINT + qs;
+        document.body.appendChild(script);
+      });
+    }
+
+    function putWholeFile(uploadUrl, item) {
+      return new Promise(function(resolve, reject) {
+        var file = item.file;
+        var total = file.size;
+        if (total === 0) { resolve(); return; }
+        var xhr = new XMLHttpRequest();
+        xhr.open('PUT', uploadUrl, true);
+        xhr.setRequestHeader('Content-Range', 'bytes 0-' + (total - 1) + '/' + total);
+        var delivered = false;
+        xhr.upload.onprogress = function(evt) {
+          if (evt.lengthComputable) {
+            var pct = Math.round((evt.loaded / evt.total) * 100);
+            item.bar.style.width = pct + '%';
+            setStatus(item, 'Uploading ' + pct + '%', 'uploading');
+            if (evt.loaded >= evt.total) delivered = true;
+          }
+        };
+        xhr.upload.onload = function() { delivered = true; };
+        xhr.onload = function() {
+          if (xhr.status >= 200 && xhr.status < 300) resolve();
+          else if (xhr.status === 0 && delivered) resolve();
+          else reject(new Error('Upload rejected (HTTP ' + xhr.status + ')'));
+        };
+        xhr.onerror = function() {
+          if (delivered) resolve(); else reject(new Error('Upload interrupted.'));
+        };
+        xhr.send(file);
+      });
+    }
+
+    function uploadOne(item, uploader, category, notes) {
+      setStatus(item, 'Starting…', 'uploading');
+      return startSession(item, uploader, category, notes).then(function(resp) {
+        if (!resp || !resp.ok || !resp.uploadUrl) {
+          throw new Error(resp && resp.error ? resp.error : 'Could not start upload');
+        }
+        return putWholeFile(resp.uploadUrl, item);
+      }).then(function() {
+        item.bar.style.width = '100%';
+        setStatus(item, 'Done ✓', 'done');
+        item.done = true;
+      }).catch(function(err) {
+        setStatus(item, 'Failed — retry', 'error');
+        item.status.title = String(err && err.message ? err.message : err);
+        item.errorMsg = item.status.title;
+      });
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, function(c) {
+        return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+      });
+    }
+
+    uploadBtn.addEventListener('click', function() {
+      if (DOCS_UPLOAD_ENDPOINT.indexOf('PASTE_') === 0) {
+        document.getElementById('uploadNotConfigured').classList.remove('hidden');
+        return;
+      }
+      var uploaderEl = document.getElementById('uploader');
+      var uploader   = uploaderEl.value.trim();
+      var category   = document.getElementById('docCategory').value;
+      var notes      = document.getElementById('docNotes').value.trim();
+      if (!uploader) {
+        globalBanner.className = 'banner err';
+        globalBanner.classList.remove('hidden');
+        globalBanner.innerHTML = '<strong>Please enter your callsign</strong> before uploading.';
+        uploaderEl.focus();
+        return;
+      }
+      var pending = queue.filter(function(q) { return !q.done; });
+      if (!pending.length) return;
+
+      uploadBtn.disabled = true;
+      uploadBtn.textContent = 'Uploading…';
+      globalBanner.classList.add('hidden');
+
+      var chain = Promise.resolve();
+      pending.forEach(function(item) {
+        chain = chain.then(function() { return uploadOne(item, uploader, category, notes); });
+      });
+
+      chain.then(function() {
+        uploadBtn.disabled = false;
+        uploadBtn.textContent = 'Upload →';
+        refreshButton();
+        var failed    = queue.filter(function(q) { return !q.done; }).length;
+        var succeeded = pending.filter(function(q) {
+          return q.done && q.status.textContent.indexOf('Done') === 0;
+        });
+        globalBanner.classList.remove('hidden');
+        if (failed === 0) {
+          globalBanner.className = 'banner ok';
+          globalBanner.innerHTML = '<strong>Thank you, ' + escapeHtml(uploader) + '!</strong> '
+            + succeeded.length + ' file' + (succeeded.length === 1 ? '' : 's') + ' uploaded to the club Drive. '
+            + (DOCS_VIEW_URL.indexOf('PASTE_') !== 0
+                ? '<a href="' + DOCS_VIEW_URL + '" target="_blank" rel="noopener">Browse the library →</a>'
+                : '')
+            + ' 73!';
+        } else {
+          globalBanner.className = 'banner err';
+          var reasons = queue.filter(function(q) { return q.errorMsg; })
+                             .map(function(q) { return escapeHtml(q.file.name + ': ' + q.errorMsg); });
+          globalBanner.innerHTML = '<strong>' + succeeded.length + ' uploaded, ' + failed
+            + ' still need attention.</strong> Tap Upload again to retry.'
+            + (reasons.length ? '<br><span style="font-size:12px;">— ' + reasons.join('<br>') + '</span>' : '');
+        }
+      });
+    });
+
+    // Dropzone wiring
+    dropzone.addEventListener('click', function() { fileInput.click(); });
+    dropzone.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); }
+    });
+    fileInput.addEventListener('change', function() { addFiles(fileInput.files); fileInput.value = ''; });
+    ['dragenter','dragover'].forEach(function(ev) {
+      dropzone.addEventListener(ev, function(e) {
+        e.preventDefault(); e.stopPropagation(); dropzone.classList.add('dragover');
+      });
+    });
+    ['dragleave','drop'].forEach(function(ev) {
+      dropzone.addEventListener(ev, function(e) {
+        e.preventDefault(); e.stopPropagation(); dropzone.classList.remove('dragover');
+      });
+    });
+    dropzone.addEventListener('drop', function(e) {
+      if (e.dataTransfer && e.dataTransfer.files) addFiles(e.dataTransfer.files);
+    });
+  }
+</script>
+
+</body>
+</html>
