@@ -173,6 +173,20 @@
     .section-alt { background: var(--white); }
     .form-row { display: flex; gap: 1rem; flex-wrap: wrap; }
     .form-row .form-group { flex: 1; min-width: 180px; }
+    textarea {
+      width: 100%; padding: 10px 14px;
+      border: 1px solid var(--border-dark); border-radius: 8px;
+      font-size: 15px; font-family: 'Barlow', sans-serif;
+      color: var(--text-dark); background: var(--white);
+      resize: vertical; outline: none; transition: border-color 0.15s;
+      line-height: 1.5;
+    }
+    textarea:focus { border-color: var(--green-primary); }
+    .wishlist-form-wrap {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: 12px; padding: 1.5rem 1.5rem 1.25rem;
+      margin-top: 1.75rem;
+    }
   </style>
 </head>
 <body>
@@ -429,18 +443,49 @@
 
     </div>
 
-    <div style="margin-top: 1.75rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
-      <a id="wishlistFormBtn" href="#" target="_blank" rel="noopener" class="btn btn-green"
-         style="display: inline-flex; align-items: center; gap: 8px;">
-        <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-          <path d="M7.5 2v11M2 7.5h11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-        Submit a request
-      </a>
-      <span id="wishlistFormFallback" class="hidden"
-            style="font-size: 13px; color: var(--text-muted);">
-        — or post in <strong>#resources</strong> on Discord
-      </span>
+    <!-- Inline wishlist request form -->
+    <div class="wishlist-form-wrap">
+      <div style="font-family: 'Barlow Condensed', sans-serif; font-size: 1.1rem; font-weight: 700; color: var(--text-dark); margin-bottom: 0.75rem;">
+        Request a resource
+      </div>
+
+      <div id="wishlistNotConfigured" class="banner warn hidden">
+        <strong>Wishlist submissions not yet wired up.</strong> Deploy
+        <code>members/google-apps-script-wishlist.gs</code> as a web app and paste
+        the URL into <code>WISHLIST_ENDPOINT</code> in this page's script block.
+      </div>
+
+      <div id="wishlistBanner" class="banner hidden"></div>
+
+      <div id="wishlistFormFields">
+        <div class="form-row" style="margin-bottom: 1rem;">
+          <div class="form-group">
+            <label for="wlCallsign">Your callsign <span style="color:#b3261e;font-weight:600;">*</span></label>
+            <input type="text" id="wlCallsign" placeholder="e.g. W4ABC" maxlength="20" />
+          </div>
+          <div class="form-group">
+            <label for="wlCategory">Category</label>
+            <select id="wlCategory">
+              <option value="Contest Rules">Contest Rules</option>
+              <option value="Operating Guide">Operating Guide</option>
+              <option value="Score Sheet">Score Sheet</option>
+              <option value="Exchange Reference">Exchange Reference</option>
+              <option value="Contest Log">Contest Log</option>
+              <option value="N1MM / Software">N1MM / Software</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label for="wlDescription">What resource are you looking for? <span style="color:#b3261e;font-weight:600;">*</span></label>
+          <textarea id="wlDescription" rows="3"
+            placeholder="e.g. CQ WW exchange quick-reference card showing mult categories and point values — would be great for newer members"></textarea>
+        </div>
+        <button id="wlSubmit" type="button" class="btn btn-green"
+                style="padding: 11px 24px; font-size: 15px;">
+          Submit Request →
+        </button>
+      </div>
     </div>
 
   </div>
@@ -486,16 +531,17 @@
        Script moves them from staging).
        e.g.: https://drive.google.com/drive/folders/FOLDERID?usp=sharing
 
-     WISHLIST_FORM_URL
-       A Google Form "Submit a request" link.
-       Create a simple 2-field form (callsign + description) and
-       paste the share URL here.
-       If left as the placeholder, members see a "post on Discord" fallback.
+     WISHLIST_ENDPOINT
+       The deployed URL of your Apps Script for wishlist submissions.
+       Deploy members/google-apps-script-wishlist.gs as a new web app.
+       On first use it auto-creates a "GCCC Wishlist Requests" Google
+       Sheet in your Drive — no manual sheet setup needed.
+       It looks like: https://script.google.com/macros/s/AKfy.../exec
   ============================================================ */
-  var ACCESS_PIN          = "7300";
+  var ACCESS_PIN           = "7300";
   var DOCS_UPLOAD_ENDPOINT = "PASTE_YOUR_DOCS_APPS_SCRIPT_URL_HERE";
   var DOCS_VIEW_URL        = "https://drive.google.com/drive/folders/1_Q8flWFZy45Zl29Wtkgbba0eM44-uAyt";
-  var WISHLIST_FORM_URL    = "PASTE_YOUR_GOOGLE_FORM_URL_HERE";
+  var WISHLIST_ENDPOINT    = "PASTE_YOUR_WISHLIST_APPS_SCRIPT_URL_HERE";
 
   /* ── PIN GATE ── */
   var SESSION_KEY = 'gccc_member_unlocked';
@@ -550,14 +596,12 @@
     }
 
     // Wishlist form
-    if (WISHLIST_FORM_URL.indexOf('PASTE_') === 0) {
-      document.getElementById('wishlistFormBtn').style.display = 'none';
-      document.getElementById('wishlistFormFallback').classList.remove('hidden');
-    } else {
-      document.getElementById('wishlistFormBtn').href = WISHLIST_FORM_URL;
+    if (WISHLIST_ENDPOINT.indexOf('PASTE_') === 0) {
+      document.getElementById('wishlistNotConfigured').classList.remove('hidden');
     }
 
     wireUpload();
+    wireWishlist();
   }
 
   // Run init if we were already unlocked on page load.
@@ -786,6 +830,91 @@
     });
     dropzone.addEventListener('drop', function(e) {
       if (e.dataTransfer && e.dataTransfer.files) addFiles(e.dataTransfer.files);
+    });
+  }
+
+  /* ── WISHLIST FORM ── */
+  function wireWishlist() {
+    var submitBtn  = document.getElementById('wlSubmit');
+    var bannerEl   = document.getElementById('wishlistBanner');
+    var formFields = document.getElementById('wishlistFormFields');
+    var wlSeq = 0;
+
+    function showBanner(cls, html) {
+      bannerEl.className = 'banner ' + cls;
+      bannerEl.innerHTML = html;
+      bannerEl.classList.remove('hidden');
+    }
+
+    function escHtml(s) {
+      return String(s).replace(/[&<>"']/g, function(c) {
+        return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+      });
+    }
+
+    function sendRequest(callsign, category, description) {
+      return new Promise(function(resolve, reject) {
+        var cbName = 'gcccWL_' + (++wlSeq) + '_' + Date.now();
+        var script = document.createElement('script');
+        function cleanup() {
+          try { delete window[cbName]; } catch(e) { window[cbName] = undefined; }
+          if (script.parentNode) script.parentNode.removeChild(script);
+        }
+        var timer = setTimeout(function() { cleanup(); reject(new Error('Request timed out.')); }, 20000);
+        window[cbName] = function(data) { clearTimeout(timer); cleanup(); resolve(data); };
+        script.onerror = function() { clearTimeout(timer); cleanup(); reject(new Error('Could not reach the server.')); };
+        var qs = '?callback=' + encodeURIComponent(cbName)
+               + '&callsign='    + encodeURIComponent(callsign)
+               + '&category='    + encodeURIComponent(category)
+               + '&description=' + encodeURIComponent(description);
+        script.src = WISHLIST_ENDPOINT + qs;
+        document.body.appendChild(script);
+      });
+    }
+
+    submitBtn.addEventListener('click', function() {
+      if (WISHLIST_ENDPOINT.indexOf('PASTE_') === 0) {
+        document.getElementById('wishlistNotConfigured').classList.remove('hidden');
+        return;
+      }
+
+      var callsign    = document.getElementById('wlCallsign').value.trim();
+      var category    = document.getElementById('wlCategory').value;
+      var description = document.getElementById('wlDescription').value.trim();
+
+      if (!callsign) {
+        showBanner('err', '<strong>Please enter your callsign.</strong>');
+        document.getElementById('wlCallsign').focus();
+        return;
+      }
+      if (!description) {
+        showBanner('err', '<strong>Please describe the resource you\'re looking for.</strong>');
+        document.getElementById('wlDescription').focus();
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Sending…';
+      bannerEl.classList.add('hidden');
+
+      sendRequest(callsign, category, description).then(function(resp) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Request →';
+        if (resp && resp.ok) {
+          showBanner('ok', '<strong>Request received, ' + escHtml(callsign) + '!</strong> '
+            + 'Your wishlist item has been saved — a club officer will review it. 73!');
+          document.getElementById('wlCallsign').value = '';
+          document.getElementById('wlDescription').value = '';
+          document.getElementById('wlCategory').selectedIndex = 0;
+        } else {
+          showBanner('err', '<strong>Something went wrong.</strong> '
+            + escHtml(resp && resp.error ? resp.error : 'Please try again.'));
+        }
+      }).catch(function(err) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Request →';
+        showBanner('err', '<strong>Could not submit.</strong> ' + escHtml(err.message || err));
+      });
     });
   }
 </script>
