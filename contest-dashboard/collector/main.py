@@ -102,16 +102,20 @@ class UDPListener(asyncio.DatagramProtocol):
             await broadcast({"type": "stats_update", "stats": stats})
 
         elif ptype == "score":
-            log.info(
-                "Score packet: qsos=%s points=%s mults=%s score=%s",
-                payload.get("total_qsos"), payload.get("total_points"),
-                payload.get("total_mults"), payload.get("score"),
-            )
-            with db.transaction(conn):
-                db.upsert_score_snapshot(conn, contest_id, payload)
-                db.enqueue_mirror(conn, "upsert_score",
-                                  {"contest_id": contest_id, **payload})
-            await broadcast({"type": "score_update", "score": payload})
+            # Only save if the score changed (dynamicresults fires every 10 s)
+            last = db.get_latest_score(conn, contest_id)
+            new_score = payload.get("score") or 0
+            if last is None or last["score"] != new_score:
+                log.info(
+                    "Score update: qsos=%s points=%s mults=%s score=%s",
+                    payload.get("total_qsos"), payload.get("total_points"),
+                    payload.get("total_mults"), new_score,
+                )
+                with db.transaction(conn):
+                    db.upsert_score_snapshot(conn, contest_id, payload)
+                    db.enqueue_mirror(conn, "upsert_score",
+                                      {"contest_id": contest_id, **payload})
+                await broadcast({"type": "score_update", "score": payload})
 
 
 async def run_udp(conn, loop):

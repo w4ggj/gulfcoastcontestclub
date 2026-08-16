@@ -44,11 +44,12 @@ EXPECT_DUPLICATE_BROADCASTS: bool = os.getenv("EXPECT_DUPES", "true").lower() ==
 # Map our internal names → XML element names in the current N1MM packet.
 # Root tag names are also listed so ingest.py has a single source of truth.
 N1MM_TAGS = {
-    "contact_info":    "contactinfo",
-    "contact_replace": "contactreplace",
-    "contact_delete":  "contactdelete",
-    "score":           "score",
-    "radio_info":      "RadioInfo",     # per-radio status (nice-to-have)
+    "contact_info":     "contactinfo",
+    "contact_replace":  "contactreplace",
+    "contact_delete":   "contactdelete",
+    "score":            "score",
+    "dynamicresults":   "dynamicresults",  # N1MM Score broadcast actual tag
+    "radio_info":       "RadioInfo",       # per-radio status (nice-to-have)
 }
 
 N1MM_FIELDS = {
