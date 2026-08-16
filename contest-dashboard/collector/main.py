@@ -79,8 +79,15 @@ class UDPListener(asyncio.DatagramProtocol):
 
             with db.transaction(conn):
                 db.upsert_contact(conn, contest_id, payload)
-                db.enqueue_mirror(conn, "upsert_contact",
-                                  {"contest_id": contest_id, **payload})
+                _CONTACT_MIRROR_COLS = {
+                    "contest_id","n1mm_id","operator","call","band","mode",
+                    "rx_freq","tx_freq","points","station_name","radio_nr",
+                    "is_original","qso_utc","is_mult1","is_mult2","is_mult3",
+                    "is_run_qso","deleted",
+                }
+                mirror_payload = {k: v for k, v in {"contest_id": contest_id, **payload}.items()
+                                  if k in _CONTACT_MIRROR_COLS}
+                db.enqueue_mirror(conn, "upsert_contact", mirror_payload)
 
             stats = db.get_live_stats(conn, contest_id)
             await broadcast({"type": "stats_update", "stats": stats})
