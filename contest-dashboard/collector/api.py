@@ -107,6 +107,17 @@ def live_contest():
     return {"contest": dict(c), "stats": stats, "score": score}
 
 
+@app.get("/api/contests/{contest_id}/contacts")
+def get_contest_contacts(contest_id: int):
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT call, band, operator, mode, qso_utc FROM contacts "
+        "WHERE contest_id=? AND deleted=0 ORDER BY qso_utc",
+        (contest_id,)
+    ).fetchall()
+    return [dict(r) for r in rows]
+
+
 @app.get("/api/contests/{contest_id}")
 def get_contest(contest_id: int):
     conn = get_conn()
