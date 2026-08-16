@@ -156,7 +156,9 @@ def create_contest(body: ContestCreate):
 @app.post("/api/contests/{contest_id}/start")
 async def start_contest(contest_id: int):
     conn = get_conn()
-    live = db.get_live_contest(conn)
+    live = conn.execute(
+        "SELECT * FROM contests WHERE status='live' LIMIT 1"
+    ).fetchone()
     if live and live["id"] != contest_id:
         raise HTTPException(409, f"Contest {live['id']} is already live; complete it first")
     c = db.get_contest(conn, contest_id)
