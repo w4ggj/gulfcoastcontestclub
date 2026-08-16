@@ -121,6 +121,24 @@
     </div>
   </section>
 
+  <!-- ── Remote operators ─────────────────────────────────────────── -->
+  <section class="admin-section">
+    <h2 class="admin-section-title">Remote Operators</h2>
+    <p class="admin-hint">Club members operating from their own shacks can feed their QSOs into this dashboard by pointing N1MM's UDP broadcast at the Pi's public IP.</p>
+    <div class="admin-card">
+      <h3 class="card-title">N1MM Broadcast Data Setup</h3>
+      <ol style="font-size:14px; color:var(--text); line-height:2; padding-left:1.2rem; margin:0;">
+        <li>In N1MM go to <strong>Config → Configure Ports → Broadcast Data</strong></li>
+        <li>Check <strong>Contacts</strong> and <strong>Score</strong></li>
+        <li>Set the IP address to <strong>your router's public IP : 12060</strong></li>
+        <li>On your router, port-forward <strong>UDP 12060 → 192.168.4.71</strong></li>
+        <li>Make sure the contest is set to <strong>Live</strong> in this admin panel before operators start logging</li>
+        <li>Each operator's PC NetBIOS name will appear as a separate station on the dashboard — add them in Station Setup above</li>
+      </ol>
+      <p style="font-size:13px; color:var(--text-muted); margin-top:1rem;">The Pi's public IP can be found at <a href="https://whatismyip.com" target="_blank" rel="noopener">whatismyip.com</a> from any device on this network.</p>
+    </div>
+  </section>
+
   <!-- ── Notification area ─────────────────────────────────────────── -->
   <div id="toast-area" class="toast-area"></div>
 
