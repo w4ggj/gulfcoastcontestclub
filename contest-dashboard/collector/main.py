@@ -102,6 +102,11 @@ class UDPListener(asyncio.DatagramProtocol):
             await broadcast({"type": "stats_update", "stats": stats})
 
         elif ptype == "score":
+            log.info(
+                "Score packet: qsos=%s points=%s mults=%s score=%s",
+                payload.get("total_qsos"), payload.get("total_points"),
+                payload.get("total_mults"), payload.get("score"),
+            )
             with db.transaction(conn):
                 db.upsert_score_snapshot(conn, contest_id, payload)
                 db.enqueue_mirror(conn, "upsert_score",
