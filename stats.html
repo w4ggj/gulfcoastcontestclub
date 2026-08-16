@@ -6,6 +6,8 @@
   <title>Contest Stats — Gulf Coast Contest Club</title>
   <meta name="description" content="Detailed contest statistics for GCCC / NE2CC — QSOs, bands, operators, and rate breakdowns." />
   <link rel="stylesheet" href="/assets/css/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
   <style>
     /* ── Stats-page extras ────────────────────────────────────────────── */
     .page-hero {
@@ -254,6 +256,13 @@
       white-space: pre-wrap;
       word-break: break-all;
     }
+
+    /* Contact map */
+    .contact-map-wrap { background: #e8f0e8; border-radius: 6px; overflow: hidden; position: relative; min-height: 180px; }
+    .contact-map-wrap svg { display: block; width: 100%; height: auto; }
+    .map-legend { display: flex; flex-wrap: wrap; gap: 8px 14px; margin-top: 0.6rem; }
+    .map-legend-item { display: flex; align-items: center; gap: 5px; font-size: 0.78rem; color: var(--text-muted); }
+    .map-legend-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
 
     .loading { text-align: center; padding: 3rem; color: var(--text-muted); font-style: italic; }
     .error-msg { color: #c0392b; padding: 1rem; border: 1px solid #f5c6c6; border-radius: 6px; background: #fff5f5; }
@@ -679,6 +688,13 @@ function renderContestStats(root, meta, contacts, snapshot) {
         </table>
       </div>` : ''}
 
+      <!-- Contact Map -->
+      <div class="stats-card" style="margin-bottom:1.5rem;" id="map-card">
+        <div class="stats-card-title">Contact Map — ${total} QSOs</div>
+        <div class="contact-map-wrap" id="contact-map-wrap"></div>
+        <div class="map-legend" id="map-legend"></div>
+      </div>
+
       <!-- Recent QSOs -->
       <div class="stats-card" style="margin-bottom:2rem;">
         <div class="stats-card-title">Recent QSOs (last ${recent.length})</div>
@@ -700,6 +716,9 @@ function renderContestStats(root, meta, contacts, snapshot) {
       </div>
     </div>
   `;
+
+  // Render contact map
+  renderContactMap(document.getElementById('contact-map-wrap'), contacts, document.getElementById('map-legend'));
 
   // Auto-refresh if live
   if (meta.status === 'live') {
@@ -739,6 +758,248 @@ function renderRateChart(hours, maxHour) {
     </div>`;
   }).join('');
   return `<div class="rate-chart" style="align-items:flex-end;gap:3px;height:120px;display:flex;padding-bottom:0;">${bars}</div>`;
+}
+
+// ── Contact map ───────────────────────────────────────────────────────────────
+// Home station: GCCC, Reddington Beach FL (grid EL87PT)
+const HOME_LAT = 27.81, HOME_LON = -82.71;
+
+// Band colours (match dashboard palette)
+const BAND_COLORS = {
+  '160m':'#9b59b6','80m':'#e67e22','40m':'#e8c040',
+  '20m':'#4ab87a','15m':'#4a9edd','10m':'#e05050',
+  '6m':'#1abc9c','2m':'#c0392b',
+};
+const BAND_ORDER = ['160m','80m','40m','20m','15m','10m','6m','2m'];
+
+// Callsign prefix → [lat, lon] lookup (longest-prefix-match, 4→1 chars)
+const PREFIX_COORDS = {
+  // USA by call area
+  'W1':[43.5,-72],'K1':[43.5,-72],'N1':[43.5,-72],
+  'W2':[40.7,-74],'K2':[40.7,-74],'N2':[40.7,-74],
+  'W3':[39.9,-76],'K3':[39.9,-76],'N3':[39.9,-76],
+  'W4':[33,-84],'K4':[33,-84],'N4':[33,-84],
+  'W5':[31,-98],'K5':[31,-98],'N5':[31,-98],
+  'W6':[37,-120],'K6':[37,-120],'N6':[37,-120],
+  'W7':[45,-114],'K7':[45,-114],'N7':[45,-114],
+  'W8':[42,-83],'K8':[42,-83],'N8':[42,-83],
+  'W9':[41.5,-87.6],'K9':[41.5,-87.6],'N9':[41.5,-87.6],
+  'W0':[39,-95],'K0':[39,-95],'N0':[39,-95],
+  // USA specials
+  'KL7':[64,-153],'AL7':[64,-153],'NL7':[64,-153],'WL7':[64,-153],
+  'KH6':[20.5,-157],'AH6':[20.5,-157],'NH6':[20.5,-157],'WH6':[20.5,-157],
+  'KH2':[13.5,144.8],'KH0':[15.2,145.8],'KH8':[-14.3,-170.7],
+  'KP4':[18.2,-66.5],'KP2':[17.7,-64.8],
+  // Canada
+  'VE1':[45.5,-63],'VA1':[45.5,-63],'VE2':[48,-72],'VA2':[48,-72],
+  'VE3':[44,-80],'VA3':[44,-80],'VE4':[50,-97],'VE5':[52,-106],
+  'VE6':[53,-114],'VA6':[53,-114],'VE7':[50,-123],'VA7':[50,-123],
+  'VE8':[62,-110],'VE9':[46.5,-66.5],'VY1':[63,-136],'VY2':[46.2,-63.1],
+  // Mexico / C.America
+  'XE':[23,-102],'TI':[9.9,-84.1],'HP':[9,-80],'TG':[15.5,-90.3],
+  'HQ':[15,-86.5],'YS':[13.7,-89.1],
+  // Caribbean
+  'CO':[22,-79.5],'CM':[22,-79.5],'HI':[18.8,-70.2],'HH':[18.9,-72.3],
+  'VP9':[32.3,-64.8],'ZF':[19.3,-81.4],'8P':[13.2,-59.6],
+  'J3':[12,-61.7],'J7':[15.3,-61.4],'J8':[13.2,-61.2],'J6':[13.9,-61],
+  // South America
+  'PY':[-15,-53],'PP':[-10,-53],'PQ':[-15,-53],'PR':[-15,-53],'PT':[-15,-53],
+  'LU':[-34,-64],'CE':[-33,-71],'OA':[-12,-77],'HC':[-2,-78],
+  'HK':[4,-74],'YV':[8,-66],'ZP':[-23,-58],'CX':[-34,-56],'CP':[-17,-65],
+  // Europe
+  'G':[52,-1],'M':[52,-1],'GX':[52,-1],'2E':[52,-1],
+  'GI':[54.6,-6.3],'MI':[54.6,-6.3],'GW':[52.1,-3.7],'MW':[52.1,-3.7],
+  'GM':[57,-4],'MM':[57,-4],
+  'EI':[53.1,-8],
+  'DL':[51,10],
+  'F':[46.6,2.3],
+  'I':[42.8,12.6],
+  'EA':[40.4,-3.7],
+  'PA':[52.1,5.3],'PD':[52.1,5.3],'PE':[52.1,5.3],'PH':[52.1,5.3],
+  'SM':[60,15],'SA':[60,15],'SB':[60,15],'SC':[60,15],'SD':[60,15],'SE':[60,15],
+  'OH':[64,25],'OG':[64,25],
+  'LA':[60,9],'LB':[60,9],'LC':[60,9],
+  'OZ':[56,10],'OV':[56,10],'OW':[56,10],
+  'OX':[71.7,-42.6], // Greenland
+  'SP':[52,20],'SN':[52,20],'SO':[52,20],'SQ':[52,20],'SR':[52,20],
+  'OK':[50.1,14.4],'OL':[50.1,14.4],
+  'OM':[48.7,19.7],
+  'HA':[47,19],'HG':[47,19],
+  'YO':[45.9,24.9],'YP':[45.9,24.9],'YQ':[45.9,24.9],'YR':[45.9,24.9],
+  'LZ':[42.7,25.5],
+  'SV':[37.9,23.7],'SX':[37.9,23.7],'J4':[37.9,23.7],
+  'SV5':[36.4,28.2],'SV9':[35.3,25.1],
+  'OE':[48.2,16.4],
+  'HB9':[47,8.3],'HB0':[47.1,9.5],
+  'ON':[50.5,4.5],'OO':[50.5,4.5],'OP':[50.5,4.5],'OR':[50.5,4.5],'OS':[50.5,4.5],
+  'LX':[49.8,6.1],
+  'TK':[42,9],'IS':[40,9],
+  'IT9':[37.5,14],
+  'YU':[44.8,20.5],'YT':[44.8,20.5],
+  'S5':[46,15],'E7':[43.8,17.5],'9A':[45.1,15.2],
+  'Z3':[41.6,21.7],'ZA':[41.3,19.8],'4O':[42.4,19.3],'Z6':[42.7,21.2],
+  'YL':[56.9,24.1],'LY':[54.7,25.3],'ES':[59.4,24.8],
+  'TA':[39,35],'TC':[39,35],
+  'OD':[33.9,35.5],'4X':[31.8,34.8],'4Z':[31.8,34.8],
+  '5B':[35,33.2],
+  'UR':[49,31],'US':[49,31],'UT':[49,31],'UU':[49,31],'UV':[49,31],
+  'UW':[49,31],'UX':[49,31],'UY':[49,31],'UZ':[49,31],
+  'EM':[49,31],'EN':[49,31],'EO':[49,31],
+  'EW':[53.9,27.6],'EU':[54,28],
+  // Russia
+  'UA9':[56,60],'UA0':[55,95],
+  'UA':[55.8,37.6],'RA':[55.8,37.6],'RK':[55.8,37.6],'RM':[55.8,37.6],
+  'RN':[55.8,37.6],'RO':[55.8,37.6],'RU':[55.8,37.6],'RV':[55.8,37.6],
+  'RW':[55.8,37.6],'RX':[55.8,37.6],'RY':[55.8,37.6],'RZ':[55.8,37.6],
+  // Middle East / Central Asia
+  '4L':[41.7,44.8],'EK':[40.2,44.5],'4J':[40.4,49.9],'4K':[40.4,49.9],
+  'EP':[32.5,54],'EQ':[32.5,54],
+  'A4':[23.6,58.6],'A7':[25.3,51.2],'A6':[24.5,54.4],
+  '9K':[29.4,47.6],'YI':[33.3,44.4],'HZ':[24,45],'7Z':[24,45],
+  'JY':[31.9,35.9],'YK':[34.8,38.9],
+  'UN':[48,67],'UK':[41,65],'EY':[39,71],
+  // Africa
+  'ZS':[-29,25],'ZR':[-29,25],'ZT':[-29,25],'ZU':[-29,25],
+  'EA8':[28.1,-15.4],'CT3':[32.7,-16.9],
+  'SU':[26.8,30.8],'CN':[33.8,-7],'7X':[28.2,2.6],
+  'TS':[33.9,9.6],'5A':[32.9,13.2],
+  'ST':[15.5,32.5],'SS':[15.5,32.5],
+  '5Z':[-1.3,36.8],'9L':[8.5,-13.2],'9G':[7.9,-1.2],'5N':[9.1,8.7],
+  'EL':[6.4,-9.4],'TU':[5.4,-4],
+  'ZD8':[-7.9,-14.4],'ZD7':[-15.9,-5.7],
+  'D2':[-11.2,17.9],'9J':[-13.1,27.9],'Z2':[-20,30],
+  'V5':[-22.6,17.1],'A2':[-22,24.7],'C9':[-18.7,35.5],
+  '5R':[-18.9,47.5],'VQ9':[-7.3,72.4],
+  // Asia
+  'JA':[36,138],'JD':[24,141],
+  'HL':[37.6,127],'DS':[37.6,127],'DT':[37.6,127],
+  'BY':[35,105],'BA':[35,105],'BD':[35,105],'BG':[35,105],'BH':[35,105],
+  'BI':[35,105],'BJ':[35,105],'BL':[35,105],'BT':[35,105],
+  'BV':[25,121],'BU':[25,121],'BW':[25,121],'BX':[25,121],
+  'VU':[20.5,78.9],'AT':[20.5,78.9],'AU':[20.5,78.9],
+  'AP':[30.4,69.3],'4S':[7.9,80.7],
+  'S2':[23.7,90.4],'S3':[23.7,90.4],
+  '9N':[28,84.1],'A5':[27.5,90.4],
+  'XV':[16,108],'XU':[11.6,104.9],'XW':[17.9,102.6],
+  'HS':[15.9,100.6],'XZ':[20,96],
+  '9M2':[3.1,101.7],'9M6':[5.4,115.2],'9W':[3,113],
+  'YB':[-6,106.8],'YC':[-6,106.8],'YD':[-6,106.8],
+  'DU':[12.9,121.7],'DV':[12.9,121.7],'DW':[12.9,121.7],'DX':[12.9,121.7],
+  '9V':[1.4,103.8],'VR':[22.3,114.2],
+  // Pacific / Oceania
+  'VK':[-25,133],'ZL':[-41.3,174.8],
+  'YJ':[-17.7,168.3],'FO':[-17.5,-149.6],
+  'T8':[7,134],'V6':[6.9,158.2],
+  'KH3':[28.2,-177.4],
+  // Atlantic islands
+  'CU':[38.5,-28.6],'EA9':[35.9,-5.4],
+  'VP8':[-51.7,-57.9],
+  '9H':[35.9,14.5], // Malta
+};
+
+function lookupCallsign(call) {
+  if (!call) return null;
+  call = call.toUpperCase().replace(/\/\S+$/, '').trim();
+  for (let l = Math.min(4, call.length); l >= 1; l--) {
+    const c = PREFIX_COORDS[call.slice(0, l)];
+    if (c) return c;
+  }
+  return null;
+}
+
+let _worldCache = null;
+async function getWorld() {
+  if (_worldCache) return _worldCache;
+  _worldCache = await fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json').then(r => r.json());
+  return _worldCache;
+}
+
+async function renderContactMap(container, contacts, legendEl) {
+  if (!container) return;
+  container.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--text-muted);font-size:0.85rem;">Loading map…</div>';
+
+  let world;
+  try { world = await getWorld(); }
+  catch(e) { container.innerHTML = '<div style="padding:1rem;color:var(--text-muted);font-size:0.82rem;">Map unavailable (no network)</div>'; return; }
+
+  container.innerHTML = '';
+  const W = container.clientWidth || 640;
+  const H = Math.round(W * 0.52);
+
+  const svg = d3.select(container).append('svg')
+    .attr('viewBox', `0 0 ${W} ${H}`)
+    .attr('width', '100%').attr('height', H);
+
+  const proj = d3.geoNaturalEarth1().scale(W/6.3).translate([W/2, H/2]);
+  const path = d3.geoPath().projection(proj);
+
+  // Ocean background
+  svg.append('rect').attr('width', W).attr('height', H).attr('fill', '#d0e4f0');
+
+  // Land
+  const land = topojson.feature(world, world.objects.countries);
+  svg.append('g').selectAll('path').data(land.features).join('path')
+    .attr('d', path).attr('fill', '#d4e8d0').attr('stroke', '#b0c8a8').attr('stroke-width', 0.4);
+
+  // Graticule
+  svg.append('path').datum(d3.geoGraticule()())
+    .attr('d', path).attr('fill', 'none').attr('stroke', '#b8cce0').attr('stroke-width', 0.25);
+
+  // Build unique entity map: one dot per worked prefix per band
+  const entities = {};
+  contacts.forEach(c => {
+    if (!c.call) return;
+    const coords = lookupCallsign(c.call);
+    if (!coords) return;
+    const band = c.band || '20m';
+    const key = c.call.slice(0,4) + '|' + band;
+    if (!entities[key]) entities[key] = { call: c.call, coords, band, count: 0 };
+    entities[key].count++;
+  });
+
+  const gLines = svg.append('g').attr('class', 'lines');
+  const gDots  = svg.append('g').attr('class', 'dots');
+  const bandsUsed = new Set();
+
+  Object.values(entities).forEach(({ call, coords, band, count }) => {
+    const [lat, lon] = coords;
+    const destPt = proj([lon, lat]);
+    if (!destPt) return;
+    const color = BAND_COLORS[band] || '#226b45';
+    bandsUsed.add(band);
+
+    // Great circle line
+    gLines.append('path')
+      .datum({ type: 'Feature', geometry: { type: 'LineString',
+        coordinates: [[HOME_LON, HOME_LAT], [lon, lat]] }})
+      .attr('d', path).attr('fill', 'none')
+      .attr('stroke', color).attr('stroke-width', 1).attr('stroke-opacity', 0.55);
+
+    // Dot
+    gDots.append('circle')
+      .attr('cx', destPt[0]).attr('cy', destPt[1]).attr('r', 3.5)
+      .attr('fill', color).attr('stroke', '#fff').attr('stroke-width', 0.8)
+      .append('title').text(`${call} · ${band} · ${count} QSO${count>1?'s':''}`);
+  });
+
+  // Home station marker
+  const homePt = proj([HOME_LON, HOME_LAT]);
+  if (homePt) {
+    svg.append('circle').attr('cx', homePt[0]).attr('cy', homePt[1]).attr('r', 6)
+      .attr('fill', '#c0392b').attr('stroke', '#fff').attr('stroke-width', 1.5);
+    svg.append('circle').attr('cx', homePt[0]).attr('cy', homePt[1]).attr('r', 3)
+      .attr('fill', '#fff');
+  }
+
+  // Legend
+  if (legendEl) {
+    legendEl.innerHTML = BAND_ORDER
+      .filter(b => bandsUsed.has(b))
+      .map(b => `<span class="map-legend-item"><span class="map-legend-dot" style="background:${BAND_COLORS[b]}"></span>${b}</span>`)
+      .join('') + `<span class="map-legend-item" style="margin-left:auto;">
+        <span class="map-legend-dot" style="background:#c0392b;border:1px solid #fff;box-sizing:border-box;"></span>Home (W4GGJ)
+      </span>`;
+  }
 }
 
 init();

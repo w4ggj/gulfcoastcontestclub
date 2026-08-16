@@ -76,7 +76,11 @@ def parse_packet(raw: bytes) -> Optional[tuple[str, dict]]:
         data = _parse_score(root)
         return ("score", data) if data else None
 
-    log.debug("Unrecognised packet tag: %s", root.tag)
+    if tag == T["dynamicresults"].lower():
+        data = _parse_dynamicresults(root)
+        return ("score", data) if data else None
+
+    log.info("Unrecognised packet tag: %s", root.tag)
     return None
 
 
@@ -123,6 +127,59 @@ def _parse_delete(root: ET.Element) -> Optional[dict]:
         log.warning("Delete packet has no ID; dropping")
         return None
     return {"n1mm_id": n1mm_id}
+
+
+def _parse_dynamicresults(root: ET.Element) -> Optional[dict]:
+    """
+    Parse N1MM <dynamicresults> score broadcast (sent every ~10 seconds).
+    Band breakdown uses attributes: band="20", type="country"/"state".
+    Totals are in band="total".
+    """
+    breakdown_el = root.find("breakdown")
+    total_qsos = total_points = total_mults = 0
+    band_breakdown: dict = {}
+
+    if breakdown_el is not None:
+        for child in breakdown_el:
+            band = child.get("band", "")
+            try:
+                val = int(child.text or 0)
+            except ValueError:
+                val = 0
+
+            if band == "total":
+                if child.tag == "qso":
+                    total_qsos = val
+                elif child.tag == "point":
+                    total_points = val
+                elif child.tag == "mult":
+                    total_mults += val   # sum all mult types (country + state/area)
+            else:
+                label = normalize_band(band) or band
+                if label not in band_breakdown:
+                    band_breakdown[label] = {"qsos": 0, "points": 0, "mults": 0}
+                if child.tag == "qso":
+                    band_breakdown[label]["qsos"] = val
+                elif child.tag == "point":
+                    band_breakdown[label]["points"] = val
+                elif child.tag == "mult":
+                    band_breakdown[label]["mults"] += val
+
+    score_el = root.find("score")
+    score = int(score_el.text or 0) if score_el is not None and score_el.text else (
+        total_points * total_mults if total_mults else 0
+    )
+
+    if total_qsos == 0 and total_points == 0:
+        return None
+
+    return {
+        "total_qsos":     total_qsos,
+        "total_points":   total_points,
+        "total_mults":    total_mults,
+        "score":          score,
+        "band_breakdown": band_breakdown,
+    }
 
 
 def _parse_score(root: ET.Element) -> Optional[dict]:
