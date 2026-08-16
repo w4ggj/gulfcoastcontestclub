@@ -76,7 +76,7 @@ def parse_packet(raw: bytes) -> Optional[tuple[str, dict]]:
         data = _parse_score(root)
         return ("score", data) if data else None
 
-    log.debug("Unrecognised packet tag: %s", root.tag)
+    log.info("Unrecognised packet tag: %s", root.tag)
     return None
 
 
