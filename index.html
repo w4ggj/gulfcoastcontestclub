@@ -232,25 +232,30 @@
 
       // Update stat bar with next event name
       const next = data.items[0];
-      const nextName = next.summary.length > 14 ? next.summary.substring(0, 14) + '…' : next.summary;
+      const nextTitle = (next.summary || next.title || 'See calendar');
+      const nextName = nextTitle.length > 14 ? nextTitle.substring(0, 14) + '…' : nextTitle;
       document.getElementById('featured-event').textContent = nextName;
 
       // Render event list
       container.innerHTML = data.items.map(event => {
+        const title = event.summary || event.title || '(Untitled event)';
         const startDate = new Date(event.start.date || event.start.dateTime);
         const month = MONTHS[startDate.getMonth()];
         const day = startDate.getDate();
         const dateRange = formatDateRange(event.start, event.end);
-        const desc = event.description
-          ? `<div class="home-event-meta">${event.description}</div>` : `<div class="home-event-meta">${dateRange}</div>`;
+        const rawDesc = event.description || '';
+        const cleanDesc = rawDesc.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
+        const meta = cleanDesc
+          ? `<div class="home-event-meta">${cleanDesc}</div>`
+          : `<div class="home-event-meta">${dateRange}</div>`;
         return `<div class="home-event">
           <div class="home-event-cal">
             <div class="home-event-cal-month">${month}</div>
             <div class="home-event-cal-day">${day}</div>
           </div>
           <div>
-            <div class="home-event-name">${event.summary}</div>
-            ${desc}
+            <div class="home-event-name">${title}</div>
+            ${meta}
           </div>
         </div>`;
       }).join('');
