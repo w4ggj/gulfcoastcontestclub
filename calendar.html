@@ -16,6 +16,19 @@
     .cal-notes { font-size: 13px; color: var(--text-muted); }
     .month-header { background: var(--green-primary); }
     .month-header td { color: var(--white); font-family: 'Barlow Condensed', sans-serif; font-size: 15px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 0.5rem 1rem; border: none; }
+    .gcal-event { padding: 1rem 0; border-bottom: 1px solid var(--border); }
+    .gcal-event:last-child { border-bottom: none; padding-bottom: 0; }
+    .gcal-event:first-child { padding-top: 0; }
+    .gcal-event-title { font-size: 15px; font-weight: 600; color: var(--text-dark); margin-bottom: 3px; }
+    .gcal-event-date { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--green-primary); margin-bottom: 4px; }
+    .gcal-event-desc { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
+    .loading { text-align: center; padding: 2rem; color: var(--text-muted); font-size: 14px; }
+    .tab-bar { display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 1.5rem; }
+    .tab { padding: 10px 24px; font-size: 14px; font-weight: 500; cursor: pointer; color: var(--text-muted); border-bottom: 3px solid transparent; margin-bottom: -2px; transition: color 0.2s; }
+    .tab.active { color: var(--green-primary); border-bottom-color: var(--green-primary); font-weight: 600; }
+    .tab:hover { color: var(--green-primary); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
   </style>
 </head>
 <body>
@@ -46,210 +59,184 @@
 <div class="page-hero">
   <div class="container">
     <h1>Contest calendar</h1>
-    <p>Major HF contests for GCCC members. Submit scores under the NE2CC club affiliation to count toward club standings.</p>
+    <p>Upcoming contests from the GCCC Google Calendar, plus our full season schedule.</p>
   </div>
 </div>
 
 <div class="section">
   <div class="container">
 
-    <div class="callout" style="margin-bottom: 2rem;">
-      Dates shift slightly year to year. Verify exact dates at <a href="https://www.arrl.org/contest-calendar" target="_blank" rel="noopener">arrl.org/contest-calendar</a> and <a href="https://www.cqww.com" target="_blank" rel="noopener">cqww.com</a>. All members are encouraged to submit claimed scores to <a href="https://www.3830scores.com" target="_blank" rel="noopener">3830scores.com</a> under the NE2CC club affiliation.
+    <div class="tab-bar">
+      <div class="tab active" onclick="switchTab('upcoming', this)">Upcoming Events</div>
+      <div class="tab" onclick="switchTab('full', this)">Full Season Schedule</div>
     </div>
 
-    <div class="card" style="overflow-x: auto;">
-      <table class="cal-table">
-        <thead>
-          <tr>
-            <th style="width: 130px;">Typical dates</th>
-            <th>Contest</th>
-            <th>Mode</th>
-            <th>Duration</th>
-            <th>Notes</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr class="month-header"><td colspan="5">January</td></tr>
-          <tr>
-            <td>Mid-January</td>
-            <td class="cal-contest-name">ARRL January VHF</td>
-            <td><span class="badge badge-blue">All modes</span></td>
-            <td>33 hrs</td>
-            <td class="cal-notes">Bonus event for members with VHF capability</td>
-          </tr>
-          <tr>
-            <td>Late January</td>
-            <td class="cal-contest-name">CQ WW RTTY</td>
-            <td><span class="badge badge-green">RTTY</span></td>
-            <td>48 hrs</td>
-            <td class="cal-notes">Digital warm-up for the season</td>
-          </tr>
-
-          <tr class="month-header"><td colspan="5">February</td></tr>
-          <tr>
-            <td>Early February</td>
-            <td class="cal-contest-name">CQ WPX RTTY</td>
-            <td><span class="badge badge-green">RTTY</span></td>
-            <td>48 hrs</td>
-            <td class="cal-notes"></td>
-          </tr>
-          <tr>
-            <td>Third weekend</td>
-            <td class="cal-contest-name">ARRL DX CW</td>
-            <td><span class="badge badge-green">CW</span></td>
-            <td>48 hrs</td>
-            <td class="cal-notes">Key HF event — strong EU openings from FL</td>
-          </tr>
-
-          <tr class="month-header"><td colspan="5">March</td></tr>
-          <tr>
-            <td>First weekend</td>
-            <td class="cal-contest-name">ARRL DX SSB</td>
-            <td><span class="badge badge-green">SSB</span></td>
-            <td>48 hrs</td>
-            <td class="cal-notes">Key HF event</td>
-          </tr>
-          <tr>
-            <td>Last weekend</td>
-            <td class="cal-contest-name">CQ WPX SSB</td>
-            <td><span class="badge badge-green">SSB</span></td>
-            <td>48 hrs</td>
-            <td class="cal-notes"></td>
-          </tr>
-
-          <tr class="month-header"><td colspan="5">April</td></tr>
-          <tr>
-            <td>Apr 25–26</td>
-            <td class="cal-contest-name">Florida QSO Party <span class="badge badge-red">GCCC Participating</span> <a href="https://floridaqsoparty.org/rules/" target="_blank" rel="noopener" style="font-size: 12px; font-weight: 400; color: var(--green-primary);">Rules ↗</a></td>
-            <td><span class="badge badge-green">SSB &amp; CW</span></td>
-            <td>20 hrs</td>
-            <td class="cal-notes">Sat 1600Z–Sun 0200Z, then Sun 1200Z–2200Z (10 hr break). 40/20/15/10m only — no 80m, 160m, WARC, or digital. FL stations send county; others send state. Sponsored by the Florida Contest Group.</td>
-          </tr>
-
-          <tr class="month-header"><td colspan="5">May</td></tr>
-          <tr>
-            <td>Last weekend</td>
-            <td class="cal-contest-name">CQ WPX CW</td>
-            <td><span class="badge badge-green">CW</span></td>
-            <td>48 hrs</td>
-            <td class="cal-notes"></td>
-          </tr>
-
-          <tr class="month-header"><td colspan="5">June</td></tr>
-          <tr>
-            <td>Second weekend</td>
-            <td class="cal-contest-name">ARRL June VHF</td>
-            <td><span class="badge badge-blue">All modes</span></td>
-            <td>33 hrs</td>
-            <td class="cal-notes">Bonus event</td>
-          </tr>
-          <tr>
-            <td>Last full weekend</td>
-            <td class="cal-contest-name">ARRL Field Day <span class="badge badge-red">GCCC Participating</span></td>
-            <td><span class="badge badge-blue">All modes</span></td>
-            <td>27 hrs</td>
-            <td class="cal-notes"><strong>Club operation — members only</strong></td>
-          </tr>
-
-          <tr class="month-header"><td colspan="5">July</td></tr>
-          <tr>
-            <td>Second weekend</td>
-            <td class="cal-contest-name">IARU HF Championship</td>
-            <td><span class="badge badge-blue">All modes</span></td>
-            <td>24 hrs</td>
-            <td class="cal-notes"></td>
-          </tr>
-          <tr>
-            <td>Jul 18–19</td>
-            <td class="cal-contest-name">North American QSO Party — RTTY <span class="badge badge-red">GCCC Participating</span> <a href="https://www.ncjweb.com/NAQP-Rules.pdf" target="_blank" rel="noopener" style="font-size: 12px; font-weight: 400; color: var(--green-primary);">Rules ↗</a></td>
-            <td><span class="badge badge-green">RTTY</span></td>
-            <td>12 hrs</td>
-            <td class="cal-notes">Sat 1800Z–Sun 0559Z. Low power only (100 W max; QRP recognized). Single ops may operate 10 of the 12 hrs. 160–10m, no WARC/60m. Exchange: name + state/province. Sponsored by NCJ. Submit under NE2CC.</td>
-          </tr>
-
-          <tr class="month-header"><td colspan="5">August</td></tr>
-          <tr>
-            <td>Aug 15–16</td>
-            <td class="cal-contest-name">SARTC WW RTTY Contest <span class="badge badge-red">GCCC Participating</span></td>
-            <td><span class="badge badge-green">RTTY</span></td>
-            <td>24 hrs (3 shifts)</td>
-            <td class="cal-notes">Individual event — everyone operates on their own. Shifts: 0000–0800 UTC Sat · 1600–2400 UTC Sat · 0800–1600 UTC Sun. Apply your score for GCCC club credit.</td>
-          </tr>
-
-          <tr class="month-header"><td colspan="5">August</td></tr>
-          <tr>
-            <td>Aug 15–16</td>
-            <td class="cal-contest-name">SARTC WW RTTY Contest <span class="badge badge-red">GCCC Participating</span></td>
-            <td><span class="badge badge-green">RTTY</span></td>
-            <td>24 hrs (3 shifts)</td>
-            <td class="cal-notes">Individual event — everyone operates on their own. Shifts: 0000–0800 UTC Sat · 1600–2400 UTC Sat · 0800–1600 UTC Sun. Apply your score for GCCC club credit.</td>
-          </tr>
-
-          <tr class="month-header"><td colspan="5">August</td></tr>
-          <tr>
-            <td>Aug 15–16</td>
-            <td class="cal-contest-name">SARTC WW RTTY Contest <span class="badge badge-red">GCCC Participating</span></td>
-            <td><span class="badge badge-green">RTTY</span></td>
-            <td>24 hrs (3 shifts)</td>
-            <td class="cal-notes">Individual event — everyone operates on their own. Shifts: 0000–0800 UTC Sat · 1600–2400 UTC Sat · 0800–1600 UTC Sun. Apply your score for GCCC club credit.</td>
-          </tr>
-
-          <tr class="month-header"><td colspan="5">October</td></tr>
-          <tr>
-            <td>Last weekend</td>
-            <td class="cal-contest-name">CQ WW SSB</td>
-            <td><span class="badge badge-green">SSB</span></td>
-            <td>48 hrs</td>
-            <td class="cal-notes">Flagship event — all members encouraged to enter</td>
-          </tr>
-
-          <tr class="month-header"><td colspan="5">November</td></tr>
-          <tr>
-            <td>First weekend</td>
-            <td class="cal-contest-name">ARRL Sweepstakes CW</td>
-            <td><span class="badge badge-green">CW</span></td>
-            <td>24 hrs</td>
-            <td class="cal-notes">Key domestic event — club aggregate scoring</td>
-          </tr>
-          <tr>
-            <td>Third weekend</td>
-            <td class="cal-contest-name">ARRL Sweepstakes SSB</td>
-            <td><span class="badge badge-green">SSB</span></td>
-            <td>24 hrs</td>
-            <td class="cal-notes">Key domestic event — club aggregate scoring</td>
-          </tr>
-          <tr>
-            <td>Last weekend</td>
-            <td class="cal-contest-name">CQ WW CW</td>
-            <td><span class="badge badge-green">CW</span></td>
-            <td>48 hrs</td>
-            <td class="cal-notes">Flagship event — all members encouraged to enter</td>
-          </tr>
-
-          <tr class="month-header"><td colspan="5">December</td></tr>
-          <tr>
-            <td>Second weekend</td>
-            <td class="cal-contest-name">ARRL 10 Meter Contest</td>
-            <td><span class="badge badge-blue">SSB &amp; CW</span></td>
-            <td>48 hrs</td>
-            <td class="cal-notes">Season closer — excellent from Florida during high solar flux</td>
-          </tr>
-        </tbody>
-      </table>
+    <!-- UPCOMING TAB — Google Calendar API -->
+    <div id="tab-upcoming" class="tab-content active">
+      <div class="callout" style="margin-bottom: 1.5rem;">
+        Events pulled live from the GCCC Google Calendar. Add this calendar to your own Google Calendar to stay up to date automatically.
+      </div>
+      <div class="card">
+        <div id="gcal-events"><div class="loading">Loading events...</div></div>
+      </div>
     </div>
 
-    <div style="margin-top: 2rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem;">
-      <div class="card card-sm">
-        <div class="section-label" style="margin-bottom: 0.5rem;">Score submission</div>
-        <p style="font-size: 14px; color: var(--text-muted);">Submit all claimed scores to <a href="https://www.3830scores.com" target="_blank" rel="noopener">3830scores.com</a> and list <strong>NE2CC</strong> as your club affiliation. This counts toward club aggregate standings in ARRL and CQ contests.</p>
+    <!-- FULL SEASON TAB — static reference table -->
+    <div id="tab-full" class="tab-content">
+      <div class="callout" style="margin-bottom: 2rem;">
+        Dates shift slightly year to year. Verify exact dates at <a href="https://www.arrl.org/contest-calendar" target="_blank" rel="noopener">arrl.org/contest-calendar</a> and <a href="https://www.cqww.com" target="_blank" rel="noopener">cqww.com</a>. Submit claimed scores to <a href="https://www.3830scores.com" target="_blank" rel="noopener">3830scores.com</a> under the NE2CC club affiliation.
       </div>
-      <div class="card card-sm">
-        <div class="section-label" style="margin-bottom: 0.5rem;">Logging software</div>
-        <p style="font-size: 14px; color: var(--text-muted);">Club members use N1MM+, Win-Test, and N3FJP depending on the contest. Reach out via the  if you need help getting set up with contest logging.</p>
+      <div class="card" style="overflow-x: auto;">
+        <table class="cal-table">
+          <thead>
+            <tr>
+              <th style="width: 130px;">Typical dates</th>
+              <th>Contest</th>
+              <th>Mode</th>
+              <th>Duration</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="month-header"><td colspan="5">January</td></tr>
+            <tr>
+              <td>Mid-January</td>
+              <td class="cal-contest-name">ARRL January VHF</td>
+              <td><span class="badge badge-blue">All modes</span></td>
+              <td>33 hrs</td>
+              <td class="cal-notes">Bonus event for members with VHF capability</td>
+            </tr>
+            <tr>
+              <td>Late January</td>
+              <td class="cal-contest-name">CQ WW RTTY</td>
+              <td><span class="badge badge-green">RTTY</span></td>
+              <td>48 hrs</td>
+              <td class="cal-notes">Digital warm-up for the season</td>
+            </tr>
+            <tr class="month-header"><td colspan="5">February</td></tr>
+            <tr>
+              <td>Early February</td>
+              <td class="cal-contest-name">CQ WPX RTTY</td>
+              <td><span class="badge badge-green">RTTY</span></td>
+              <td>48 hrs</td>
+              <td class="cal-notes"></td>
+            </tr>
+            <tr>
+              <td>Third weekend</td>
+              <td class="cal-contest-name">ARRL DX CW</td>
+              <td><span class="badge badge-green">CW</span></td>
+              <td>48 hrs</td>
+              <td class="cal-notes">Key HF event — strong EU openings from FL</td>
+            </tr>
+            <tr class="month-header"><td colspan="5">March</td></tr>
+            <tr>
+              <td>First weekend</td>
+              <td class="cal-contest-name">ARRL DX SSB</td>
+              <td><span class="badge badge-green">SSB</span></td>
+              <td>48 hrs</td>
+              <td class="cal-notes">Key HF event</td>
+            </tr>
+            <tr>
+              <td>Last weekend</td>
+              <td class="cal-contest-name">CQ WPX SSB</td>
+              <td><span class="badge badge-green">SSB</span></td>
+              <td>48 hrs</td>
+              <td class="cal-notes"></td>
+            </tr>
+            <tr class="month-header"><td colspan="5">April</td></tr>
+            <tr>
+              <td>Apr 25–26</td>
+              <td class="cal-contest-name">Florida QSO Party <span class="badge badge-red">GCCC Participating</span> <a href="https://floridaqsoparty.org/rules/" target="_blank" rel="noopener" style="font-size: 12px; font-weight: 400; color: var(--green-primary);">Rules ↗</a></td>
+              <td><span class="badge badge-green">SSB &amp; CW</span></td>
+              <td>20 hrs</td>
+              <td class="cal-notes">Sat 1600Z–Sun 0200Z, then Sun 1200Z–2200Z. 40/20/15/10m only. FL stations send county; others send state.</td>
+            </tr>
+            <tr class="month-header"><td colspan="5">May</td></tr>
+            <tr>
+              <td>Last weekend</td>
+              <td class="cal-contest-name">CQ WPX CW</td>
+              <td><span class="badge badge-green">CW</span></td>
+              <td>48 hrs</td>
+              <td class="cal-notes"></td>
+            </tr>
+            <tr class="month-header"><td colspan="5">June</td></tr>
+            <tr>
+              <td>Second weekend</td>
+              <td class="cal-contest-name">ARRL June VHF</td>
+              <td><span class="badge badge-blue">All modes</span></td>
+              <td>33 hrs</td>
+              <td class="cal-notes">Bonus event</td>
+            </tr>
+            <tr>
+              <td>Last full weekend</td>
+              <td class="cal-contest-name">ARRL Field Day <span class="badge badge-red">GCCC Participating</span></td>
+              <td><span class="badge badge-blue">All modes</span></td>
+              <td>27 hrs</td>
+              <td class="cal-notes"><strong>Club operation — members only</strong></td>
+            </tr>
+            <tr class="month-header"><td colspan="5">July</td></tr>
+            <tr>
+              <td>Second weekend</td>
+              <td class="cal-contest-name">IARU HF Championship</td>
+              <td><span class="badge badge-blue">All modes</span></td>
+              <td>24 hrs</td>
+              <td class="cal-notes"></td>
+            </tr>
+            <tr class="month-header"><td colspan="5">October</td></tr>
+            <tr>
+              <td>Last weekend</td>
+              <td class="cal-contest-name">CQ WW SSB</td>
+              <td><span class="badge badge-green">SSB</span></td>
+              <td>48 hrs</td>
+              <td class="cal-notes">Flagship event — all members encouraged to enter</td>
+            </tr>
+            <tr class="month-header"><td colspan="5">November</td></tr>
+            <tr>
+              <td>First weekend</td>
+              <td class="cal-contest-name">ARRL Sweepstakes CW</td>
+              <td><span class="badge badge-green">CW</span></td>
+              <td>24 hrs</td>
+              <td class="cal-notes">Key domestic event — club aggregate scoring</td>
+            </tr>
+            <tr>
+              <td>Third weekend</td>
+              <td class="cal-contest-name">ARRL Sweepstakes SSB</td>
+              <td><span class="badge badge-green">SSB</span></td>
+              <td>24 hrs</td>
+              <td class="cal-notes">Key domestic event — club aggregate scoring</td>
+            </tr>
+            <tr>
+              <td>Last weekend</td>
+              <td class="cal-contest-name">CQ WW CW</td>
+              <td><span class="badge badge-green">CW</span></td>
+              <td>48 hrs</td>
+              <td class="cal-notes">Flagship event — all members encouraged to enter</td>
+            </tr>
+            <tr class="month-header"><td colspan="5">December</td></tr>
+            <tr>
+              <td>Second weekend</td>
+              <td class="cal-contest-name">ARRL 10 Meter Contest</td>
+              <td><span class="badge badge-blue">SSB &amp; CW</span></td>
+              <td>48 hrs</td>
+              <td class="cal-notes">Season closer — excellent from Florida during high solar flux</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-      <div class="card card-sm">
-        <div class="section-label" style="margin-bottom: 0.5rem;">Field Day</div>
-        <p style="font-size: 14px; color: var(--text-muted);">ARRL Field Day is our biggest club event of the year. We operate as a group from a local site — members only. Watch <a href="/news.html">News</a> for site announcements.</p>
+
+      <div style="margin-top: 2rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem;">
+        <div class="card card-sm">
+          <div class="section-label" style="margin-bottom: 0.5rem;">Score submission</div>
+          <p style="font-size: 14px; color: var(--text-muted);">Submit all claimed scores to <a href="https://www.3830scores.com" target="_blank" rel="noopener">3830scores.com</a> and list <strong>NE2CC</strong> as your club affiliation.</p>
+        </div>
+        <div class="card card-sm">
+          <div class="section-label" style="margin-bottom: 0.5rem;">Logging software</div>
+          <p style="font-size: 14px; color: var(--text-muted);">Club members use N1MM+, Win-Test, and N3FJP depending on the contest. Reach out via the <a href="/contact.html">contact form</a> if you need help.</p>
+        </div>
+        <div class="card card-sm">
+          <div class="section-label" style="margin-bottom: 0.5rem;">Field Day</div>
+          <p style="font-size: 14px; color: var(--text-muted);">ARRL Field Day is our biggest club event. Members only. Watch <a href="/news.html">News</a> for site announcements.</p>
+        </div>
       </div>
     </div>
 
@@ -268,8 +255,73 @@
     <li><a href="/photos.html">Photos</a></li>
     <li><a href="/contact.html">Contact</a></li>
   </ul>
-  <div class="footer-copy">73 de NE2CC &nbsp;·&nbsp; &copy; 2026 Gulf Coast Contest Club &nbsp;·&nbsp; Last updated: July 9, 2026</div>
+  <div class="footer-copy">73 de NE2CC &nbsp;·&nbsp; &copy; 2026 Gulf Coast Contest Club &nbsp;·&nbsp; Last updated: May 16, 2026</div>
 </footer>
+
+<script>
+  const API_KEY = 'AIzaSyDN-MKbtXNPAeJZ5oYjDy7pdM3Uj9zw-EA';
+  const CALENDAR_ID = encodeURIComponent('gulfcoastcontestclub@gmail.com');
+
+  function switchTab(tab, el) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    el.classList.add('active');
+  }
+
+  function formatDateRange(start, end) {
+    const s = new Date(start.date || start.dateTime);
+    const e = end.date ? new Date(new Date(end.date).getTime() - 86400000) : new Date(end.dateTime);
+    const opts = { month: 'long', day: 'numeric', year: 'numeric' };
+    if (s.toDateString() === e.toDateString()) {
+      return s.toLocaleDateString('en-US', opts);
+    }
+    return s.toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) +
+           ' – ' + e.toLocaleDateString('en-US', opts);
+  }
+
+  async function loadEvents() {
+    const now = new Date().toISOString();
+    const url = `https://www.googleapis.com/calendar/v3/calendars/${CALENDAR_ID}/events` +
+      `?key=${API_KEY}&timeMin=${now}&maxResults=20&singleEvents=true&orderBy=startTime`;
+
+    try {
+      const res = await fetch(url);
+      const data = await res.json();
+      const container = document.getElementById('gcal-events');
+
+      if (data.error) {
+        container.innerHTML = '<p style="color:var(--text-muted);padding:1rem 0;">Unable to load events: ' + data.error.message + '</p>';
+        return;
+      }
+
+      if (!data.items || data.items.length === 0) {
+        container.innerHTML = '<p style="color:var(--text-muted);padding:1rem 0;">No upcoming events found. Check back soon.</p>';
+        return;
+      }
+
+      container.innerHTML = data.items.map(event => {
+        const dateRange = formatDateRange(event.start, event.end);
+        const desc = event.description
+          ? `<div class="gcal-event-desc">${event.description}</div>` : '';
+        const loc = event.location
+          ? `<div class="gcal-event-desc" style="margin-top:3px;">📍 ${event.location}</div>` : '';
+        return `<div class="gcal-event">
+          <div class="gcal-event-date">${dateRange}</div>
+          <div class="gcal-event-title">${event.summary}</div>
+          ${desc}${loc}
+        </div>`;
+      }).join('');
+
+    } catch (err) {
+      document.getElementById('gcal-events').innerHTML =
+        '<p style="color:var(--text-muted);padding:1rem 0;">Unable to load calendar events. Please check back later.</p>';
+      console.error('Calendar error:', err);
+    }
+  }
+
+  loadEvents();
+</script>
 
 </body>
 </html>
