@@ -246,9 +246,8 @@
         const dateRange = formatDateRange(event.start, event.end);
         const rawDesc = event.description || '';
         const cleanDesc = rawDesc
-          .replace(/<a\s+href="([^"]+)"[^>]*>(.*?)<\/a>/gi, '<a href="$1" target="_blank" rel="noopener">$2</a>')
-          .replace(/<(?!\/?(a)\b)[^>]*>/gi, '')
-          .replace(/&nbsp;/g, ' ')
+          .replace(/https?:\/\/[^\s\n<]+/g, url => `<a href="${url}" target="_blank" rel="noopener">${url}</a>`)
+          .replace(/\n/g, ' ')
           .trim();
         const meta = cleanDesc
           ? `<div class="home-event-meta">${cleanDesc}</div>`

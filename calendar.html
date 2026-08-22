@@ -308,11 +308,10 @@
         const dateRange = formatDateRange(event.start, event.end);
         // Strip HTML tags from description if present
         const rawDesc = event.description || '';
-        // Keep anchor tags but strip all other HTML
+        // Convert plain text URLs to clickable links, then handle line breaks
         const cleanDesc = rawDesc
-          .replace(/<a\s+href="([^"]+)"[^>]*>(.*?)<\/a>/gi, '<a href="$1" target="_blank" rel="noopener">$2</a>')
-          .replace(/<(?!\/?(a)\b)[^>]*>/gi, '')
-          .replace(/&nbsp;/g, ' ')
+          .replace(/https?:\/\/[^\s\n<]+/g, url => `<a href="${url}" target="_blank" rel="noopener">${url}</a>`)
+          .replace(/\n/g, ' ')
           .trim();
         const desc = cleanDesc ? `<div class="gcal-event-desc">${cleanDesc}</div>` : '';
         const loc = event.location
