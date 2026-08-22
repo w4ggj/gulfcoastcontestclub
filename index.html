@@ -6,6 +6,17 @@
   <title>Gulf Coast Contest Club — GCCC</title>
   <meta name="description" content="The Gulf Coast Contest Club, GCCC, based in Redington Beach, Florida. Serious HF contesting on the Gulf Coast." />
   <link rel="stylesheet" href="/assets/css/style.css" />
+  <style>
+    .home-event { display: flex; align-items: flex-start; gap: 1rem; padding: 0.85rem 0; border-bottom: 1px solid var(--border); }
+    .home-event:last-child { border-bottom: none; padding-bottom: 0; }
+    .home-event:first-child { padding-top: 0; }
+    .home-event-cal { background: var(--green-primary); color: var(--white); border-radius: 6px; width: 46px; min-width: 46px; text-align: center; padding: 5px 4px; }
+    .home-event-cal-month { font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.8; }
+    .home-event-cal-day { font-family: 'Barlow Condensed', sans-serif; font-size: 1.4rem; font-weight: 700; line-height: 1; }
+    .home-event-name { font-size: 15px; font-weight: 600; color: var(--text-dark); margin-bottom: 2px; }
+    .home-event-meta { font-size: 13px; color: var(--text-muted); }
+    .loading-sm { padding: 1rem 0; color: var(--text-muted); font-size: 14px; }
+  </style>
 </head>
 <body>
 
@@ -42,8 +53,8 @@
     <h1>Competing from the Gulf Coast,<br>heard around the world</h1>
     <p class="hero-sub">A community of serious amateur radio operators dedicated to HF contesting and operating excellence on Florida's Gulf Coast.</p>
     <div class="hero-actions">
-      
-      <a href="/calendar.html" class="btn btn-outline">Contest calendar</a>
+      <a href="/calendar.html" class="btn btn-primary">Contest calendar</a>
+      <a href="/about.html" class="btn btn-outline">About GCCC</a>
     </div>
   </div>
 </section>
@@ -71,62 +82,23 @@
   <div class="container">
     <div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 2rem;">
 
+      <!-- Upcoming contests — Google Calendar feed -->
       <div>
         <div class="section-label">On the air</div>
         <div class="section-title">Upcoming contests</div>
-        <p class="section-subtitle">Key events for GCCC club members this season.</p>
+        <p class="section-subtitle">Live from the GCCC contest calendar.</p>
         <div class="card">
-          <div class="contest-list">
-            <div class="contest-item">
-              <div class="contest-cal"><div class="contest-cal-month">Jul</div><div class="contest-cal-day">18</div></div>
-              <div class="contest-info">
-                <div class="contest-info-name">NAQP RTTY <span class="badge badge-red">GCCC Participating</span> <span class="badge badge-green">HF</span></div>
-                <div class="contest-info-meta">12 hours · Low power · RTTY</div>
-              </div>
-            </div>
-            <div class="contest-item">
-              <div class="contest-cal"><div class="contest-cal-month">Aug</div><div class="contest-cal-day">15</div></div>
-              <div class="contest-info">
-                <div class="contest-info-name">SARTC WW RTTY <span class="badge badge-red">GCCC Participating</span></div>
-                <div class="contest-info-meta">24 hrs · 3 shifts · Individual op · Apply score for GCCC credit</div>
-              </div>
-            </div>
-            <div class="contest-item">
-              <div class="contest-cal"><div class="contest-cal-month">Oct</div><div class="contest-cal-day">24</div></div>
-              <div class="contest-info">
-                <div class="contest-info-name">CQ WW SSB <span class="badge badge-green">HF</span></div>
-                <div class="contest-info-meta">48 hours · All bands · Phone</div>
-              </div>
-            </div>
-            <div class="contest-item">
-              <div class="contest-cal"><div class="contest-cal-month">Nov</div><div class="contest-cal-day">7</div></div>
-              <div class="contest-info">
-                <div class="contest-info-name">ARRL Sweepstakes CW <span class="badge badge-green">HF</span></div>
-                <div class="contest-info-meta">24 hours · All bands · CW</div>
-              </div>
-            </div>
-            <div class="contest-item">
-              <div class="contest-cal"><div class="contest-cal-month">Nov</div><div class="contest-cal-day">28</div></div>
-              <div class="contest-info">
-                <div class="contest-info-name">CQ WW CW <span class="badge badge-green">HF</span></div>
-                <div class="contest-info-meta">48 hours · All bands · CW</div>
-              </div>
-            </div>
-            <div class="contest-item">
-              <div class="contest-cal"><div class="contest-cal-month">Dec</div><div class="contest-cal-day">12</div></div>
-              <div class="contest-info">
-                <div class="contest-info-name">ARRL 10 Meter <span class="badge badge-green">HF</span></div>
-                <div class="contest-info-meta">48 hours · SSB &amp; CW</div>
-              </div>
-            </div>
-          </div>
+          <div id="home-events"><div class="loading-sm">Loading events...</div></div>
           <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border);">
             <a href="/calendar.html" class="btn btn-green" style="font-size: 13px; padding: 8px 18px;">Full calendar →</a>
           </div>
         </div>
       </div>
 
+      <!-- Right column -->
       <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+
+        <!-- Latest news -->
         <div>
           <div class="section-label">Latest</div>
           <div class="section-title">News</div>
@@ -153,9 +125,17 @@
           </div>
         </div>
 
-        
+        <!-- Contact CTA -->
+        <div class="cta-block">
+          <h2>Get in touch</h2>
+          <p>Questions about GCCC? Reach out and a club member will follow up directly.</p>
+          <a href="/contact.html" class="btn btn-primary">Contact us</a>
+        </div>
+
+      </div>
     </div>
 
+    <!-- About strip -->
     <div style="margin-top: 3rem;">
       <div class="section-label">Who we are</div>
       <div class="section-title" style="margin-bottom: 0.25rem;">About the club</div>
@@ -199,6 +179,7 @@
         <a href="/about.html" class="btn btn-green">Learn more about GCCC →</a>
       </div>
     </div>
+
   </div>
 </div>
 
@@ -214,23 +195,74 @@
     <li><a href="/photos.html">Photos</a></li>
     <li><a href="/contact.html">Contact</a></li>
   </ul>
-  <div class="footer-copy">73 de NE2CC &nbsp;·&nbsp; &copy; 2026 Gulf Coast Contest Club &nbsp;·&nbsp; Last updated: July 9, 2026</div>
+  <div class="footer-copy">73 de NE2CC &nbsp;·&nbsp; &copy; 2026 Gulf Coast Contest Club &nbsp;·&nbsp; Last updated: May 16, 2026</div>
 </footer>
 
 <script>
-  const contests = [
-    { name: "NAQP RTTY",        date: new Date("2026-07-18") },
-    { name: "SARTC WW RTTY",   date: new Date("2026-08-15") },
-    { name: "CQ WW SSB",       date: new Date("2026-10-24") },
-    { name: "ARRL SS CW",      date: new Date("2026-11-07") },
-    { name: "CQ WW CW",        date: new Date("2026-11-28") },
-    { name: "ARRL 10 Meter",   date: new Date("2026-12-12") },
-  ];
-  const today = new Date();
-  today.setHours(0,0,0,0);
-  const next = contests.find(c => c.date >= today);
-  const el = document.getElementById("featured-event");
-  if (next) { el.textContent = next.name; } else { el.textContent = "Stay tuned"; }
+  const API_KEY = 'AIzaSyDN-MKbtXNPAeJZ5oYjDy7pdM3Uj9zw-EA';
+  const CALENDAR_ID = encodeURIComponent('gulfcoastcontestclub@gmail.com');
+
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  function formatDateRange(start, end) {
+    const s = new Date(start.date || start.dateTime);
+    const e = end.date ? new Date(new Date(end.date).getTime() - 86400000) : new Date(end.dateTime);
+    const opts = { month: 'long', day: 'numeric', year: 'numeric' };
+    if (s.toDateString() === e.toDateString()) return s.toLocaleDateString('en-US', opts);
+    return s.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) +
+           ' – ' + e.toLocaleDateString('en-US', opts);
+  }
+
+  async function loadHomeEvents() {
+    const now = new Date().toISOString();
+    const url = `https://www.googleapis.com/calendar/v3/calendars/${CALENDAR_ID}/events` +
+      `?key=${API_KEY}&timeMin=${now}&maxResults=5&singleEvents=true&orderBy=startTime`;
+
+    try {
+      const res = await fetch(url);
+      const data = await res.json();
+      const container = document.getElementById('home-events');
+
+      if (data.error || !data.items || data.items.length === 0) {
+        container.innerHTML = '<p class="loading-sm">No upcoming events. Check back soon.</p>';
+        // Fall back to updating stat bar with static data
+        document.getElementById('featured-event').textContent = 'ARRL Field Day';
+        return;
+      }
+
+      // Update stat bar with next event name
+      const next = data.items[0];
+      const nextName = next.summary.length > 14 ? next.summary.substring(0, 14) + '…' : next.summary;
+      document.getElementById('featured-event').textContent = nextName;
+
+      // Render event list
+      container.innerHTML = data.items.map(event => {
+        const startDate = new Date(event.start.date || event.start.dateTime);
+        const month = MONTHS[startDate.getMonth()];
+        const day = startDate.getDate();
+        const dateRange = formatDateRange(event.start, event.end);
+        const desc = event.description
+          ? `<div class="home-event-meta">${event.description}</div>` : `<div class="home-event-meta">${dateRange}</div>`;
+        return `<div class="home-event">
+          <div class="home-event-cal">
+            <div class="home-event-cal-month">${month}</div>
+            <div class="home-event-cal-day">${day}</div>
+          </div>
+          <div>
+            <div class="home-event-name">${event.summary}</div>
+            ${desc}
+          </div>
+        </div>`;
+      }).join('');
+
+    } catch (err) {
+      document.getElementById('home-events').innerHTML = '<p class="loading-sm">Unable to load events.</p>';
+      document.getElementById('featured-event').textContent = 'See calendar';
+      console.error(err);
+    }
+  }
+
+  loadHomeEvents();
 </script>
 
 </body>
