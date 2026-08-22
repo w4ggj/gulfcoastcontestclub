@@ -216,7 +216,8 @@
   async function loadHomeEvents() {
     const now = new Date().toISOString();
     const url = `https://www.googleapis.com/calendar/v3/calendars/${CALENDAR_ID}/events` +
-      `?key=${API_KEY}&timeMin=${now}&maxResults=5&singleEvents=true&orderBy=startTime`;
+      `?key=${API_KEY}&timeMin=${now}&maxResults=5&singleEvents=true&orderBy=startTime` +
+      `&fields=items(summary,description,location,start,end)`;
 
     try {
       const res = await fetch(url);
@@ -244,7 +245,11 @@
         const day = startDate.getDate();
         const dateRange = formatDateRange(event.start, event.end);
         const rawDesc = event.description || '';
-        const cleanDesc = rawDesc.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
+        const cleanDesc = rawDesc
+          .replace(/<a\s+href="([^"]+)"[^>]*>(.*?)<\/a>/gi, '<a href="$1" target="_blank" rel="noopener">$2</a>')
+          .replace(/<(?!\/?(a)\b)[^>]*>/gi, '')
+          .replace(/&nbsp;/g, ' ')
+          .trim();
         const meta = cleanDesc
           ? `<div class="home-event-meta">${cleanDesc}</div>`
           : `<div class="home-event-meta">${dateRange}</div>`;

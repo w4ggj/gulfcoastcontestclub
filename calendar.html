@@ -283,7 +283,8 @@
   async function loadEvents() {
     const now = new Date().toISOString();
     const url = `https://www.googleapis.com/calendar/v3/calendars/${CALENDAR_ID}/events` +
-      `?key=${API_KEY}&timeMin=${now}&maxResults=20&singleEvents=true&orderBy=startTime`;
+      `?key=${API_KEY}&timeMin=${now}&maxResults=20&singleEvents=true&orderBy=startTime` +
+      `&fields=items(summary,description,location,start,end)`;
 
     try {
       const res = await fetch(url);
@@ -295,6 +296,8 @@
         return;
       }
 
+      console.log('Raw API response:', JSON.stringify(data.items, null, 2));
+
       if (!data.items || data.items.length === 0) {
         container.innerHTML = '<p style="color:var(--text-muted);padding:1rem 0;">No upcoming events found. Check back soon.</p>';
         return;
@@ -305,7 +308,12 @@
         const dateRange = formatDateRange(event.start, event.end);
         // Strip HTML tags from description if present
         const rawDesc = event.description || '';
-        const cleanDesc = rawDesc.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
+        // Keep anchor tags but strip all other HTML
+        const cleanDesc = rawDesc
+          .replace(/<a\s+href="([^"]+)"[^>]*>(.*?)<\/a>/gi, '<a href="$1" target="_blank" rel="noopener">$2</a>')
+          .replace(/<(?!\/?(a)\b)[^>]*>/gi, '')
+          .replace(/&nbsp;/g, ' ')
+          .trim();
         const desc = cleanDesc ? `<div class="gcal-event-desc">${cleanDesc}</div>` : '';
         const loc = event.location
           ? `<div class="gcal-event-desc" style="margin-top:3px;">📍 ${event.location}</div>` : '';
