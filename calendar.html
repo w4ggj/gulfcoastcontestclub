@@ -301,14 +301,17 @@
       }
 
       container.innerHTML = data.items.map(event => {
+        const title = event.summary || event.title || '(Untitled event)';
         const dateRange = formatDateRange(event.start, event.end);
-        const desc = event.description
-          ? `<div class="gcal-event-desc">${event.description}</div>` : '';
+        // Strip HTML tags from description if present
+        const rawDesc = event.description || '';
+        const cleanDesc = rawDesc.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
+        const desc = cleanDesc ? `<div class="gcal-event-desc">${cleanDesc}</div>` : '';
         const loc = event.location
           ? `<div class="gcal-event-desc" style="margin-top:3px;">📍 ${event.location}</div>` : '';
         return `<div class="gcal-event">
           <div class="gcal-event-date">${dateRange}</div>
-          <div class="gcal-event-title">${event.summary}</div>
+          <div class="gcal-event-title">${title}</div>
           ${desc}${loc}
         </div>`;
       }).join('');
