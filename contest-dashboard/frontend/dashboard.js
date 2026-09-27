@@ -174,7 +174,7 @@ function handleMessage(msg) {
     case 'stats_update':
       state.stats = msg.stats;
       renderStats();
-      if (currentView === 'map' && state.contest) loadAndRenderDashMap();
+      if (state.contest) loadAndRenderDashMap();
       break;
 
     case 'score_update':
