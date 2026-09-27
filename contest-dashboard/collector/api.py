@@ -12,9 +12,13 @@ import json
 import logging
 from typing import Optional
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
+import hashlib
+import re
+from datetime import datetime, timezone
+
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, UploadFile, File
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, HTMLResponse
 from pydantic import BaseModel
 
 import db
@@ -215,6 +219,178 @@ def add_station(contest_id: int, body: StationSetup):
                         bands=body.bands, note=body.note)
     conn.commit()
     return {"station_id": sid}
+
+
+# ── ADIF Import ───────────────────────────────────────────────────────────
+
+def _parse_adif_records(text: str):
+    eoh = text.upper().find("<EOH>")
+    if eoh >= 0:
+        text = text[eoh + 5:]
+    records = []
+    for raw in re.split(r"<EOR>", text, flags=re.IGNORECASE):
+        raw = raw.strip()
+        if not raw:
+            continue
+        fields = {}
+        for m in re.finditer(r"<([^:>]+)(?::\d+(?::[^>]*)?)?>([^<]*)", raw):
+            fields[m.group(1).upper()] = m.group(2).strip()
+        if fields:
+            records.append(fields)
+    return records
+
+
+def _band_from_freq(freq_str):
+    try:
+        mhz = float(freq_str)
+    except (ValueError, TypeError):
+        return None
+    if 1.8 <= mhz < 2.0:        return "160M"
+    if 3.5 <= mhz < 4.0:        return "80M"
+    if 7.0 <= mhz < 7.3:        return "40M"
+    if 10.1 <= mhz < 10.15:     return "30M"
+    if 14.0 <= mhz < 14.35:     return "20M"
+    if 18.068 <= mhz < 18.168:  return "17M"
+    if 21.0 <= mhz < 21.45:     return "15M"
+    if 24.89 <= mhz < 24.99:    return "12M"
+    if 28.0 <= mhz < 29.7:      return "10M"
+    if 50.0 <= mhz < 54.0:      return "6M"
+    return None
+
+
+def _adif_record_to_row(r):
+    call = r.get("CALL", "").upper().strip()
+    if not call:
+        return None
+    date_s = r.get("QSO_DATE", "")
+    time_s = r.get("TIME_ON", "")
+    qso_utc = None
+    if len(date_s) == 8 and len(time_s) >= 6:
+        try:
+            qso_utc = datetime.strptime(date_s + time_s[:6], "%Y%m%d%H%M%S").replace(
+                tzinfo=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        except ValueError:
+            pass
+    band = r.get("BAND", "").upper() or _band_from_freq(r.get("FREQ")) or ""
+    mode = r.get("MODE", "").upper()
+    operator = r.get("OPERATOR", r.get("STATION_CALLSIGN", "")).upper()
+    rx_freq = r.get("FREQ_RX") or r.get("FREQ")
+    tx_freq = r.get("FREQ")
+    try:
+        points = int(r.get("APP_N1MM_POINTS", 0) or 0)
+    except ValueError:
+        points = 0
+    is_mult1 = 1 if r.get("APP_N1MM_MULT1") == "1" else 0
+    is_mult2 = 1 if r.get("APP_N1MM_MULT2") == "1" else 0
+    is_mult3 = 1 if r.get("APP_N1MM_MULT3") == "1" else 0
+    is_run_qso = 1 if r.get("APP_N1MM_ISRUNQSO") == "1" else 0
+    station_name = r.get("APP_N1MM_NETBIOSNAME", "")
+    try:
+        radio_nr = int(r.get("APP_N1MM_RADIO_NR", 1) or 1)
+    except ValueError:
+        radio_nr = 1
+    is_original = 1 if r.get("APP_N1MM_ISORIGINAL", "True") == "True" else 0
+    n1mm_id = r.get("APP_N1MM_ID") or hashlib.md5(
+        f"{call}|{qso_utc}|{band}|{mode}|{operator}".encode()).hexdigest()
+    return dict(n1mm_id=n1mm_id, call=call, band=band, mode=mode,
+                operator=operator, rx_freq=rx_freq, tx_freq=tx_freq,
+                points=points, station_name=station_name, radio_nr=radio_nr,
+                is_original=is_original, qso_utc=qso_utc,
+                is_mult1=is_mult1, is_mult2=is_mult2, is_mult3=is_mult3,
+                is_run_qso=is_run_qso)
+
+
+@app.post("/api/contests/{contest_id}/import_adif")
+async def import_adif(contest_id: int, file: UploadFile = File(...)):
+    conn = get_conn()
+    contest = conn.execute("SELECT id, name FROM contests WHERE id=?", (contest_id,)).fetchone()
+    if not contest:
+        raise HTTPException(status_code=404, detail="Contest not found")
+    content = await file.read()
+    text = content.decode("utf-8", errors="replace")
+    records = _parse_adif_records(text)
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    inserted = updated = skipped = 0
+    for r in records:
+        row = _adif_record_to_row(r)
+        if not row:
+            skipped += 1
+            continue
+        exists = conn.execute(
+            "SELECT rowid FROM contacts WHERE contest_id=? AND n1mm_id=?",
+            (contest_id, row["n1mm_id"])
+        ).fetchone()
+        if exists:
+            conn.execute("""
+                UPDATE contacts SET call=?,band=?,mode=?,operator=?,rx_freq=?,tx_freq=?,
+                points=?,station_name=?,radio_nr=?,is_original=?,qso_utc=?,
+                is_mult1=?,is_mult2=?,is_mult3=?,is_run_qso=?,deleted=0,updated_utc=?
+                WHERE contest_id=? AND n1mm_id=?
+            """, (row["call"], row["band"], row["mode"], row["operator"],
+                  row["rx_freq"], row["tx_freq"], row["points"], row["station_name"],
+                  row["radio_nr"], row["is_original"], row["qso_utc"],
+                  row["is_mult1"], row["is_mult2"], row["is_mult3"], row["is_run_qso"],
+                  now, contest_id, row["n1mm_id"]))
+            updated += 1
+        else:
+            conn.execute("""
+                INSERT INTO contacts
+                    (contest_id,n1mm_id,operator,call,band,mode,rx_freq,tx_freq,
+                     points,station_name,radio_nr,is_original,qso_utc,
+                     is_mult1,is_mult2,is_mult3,is_run_qso,deleted,updated_utc)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,?)
+            """, (contest_id, row["n1mm_id"], row["operator"], row["call"],
+                  row["band"], row["mode"], row["rx_freq"], row["tx_freq"],
+                  row["points"], row["station_name"], row["radio_nr"], row["is_original"],
+                  row["qso_utc"], row["is_mult1"], row["is_mult2"], row["is_mult3"],
+                  row["is_run_qso"], now))
+            inserted += 1
+    conn.commit()
+    total = conn.execute(
+        "SELECT COUNT(*) FROM contacts WHERE contest_id=? AND deleted=0", (contest_id,)
+    ).fetchone()[0]
+    await broadcast({"type": "reload_stats", "contest_id": contest_id})
+    return {"inserted": inserted, "updated": updated, "skipped": skipped, "total": total}
+
+
+@app.get("/api/contests/{contest_id}/import_adif", response_class=HTMLResponse)
+def import_adif_form(contest_id: int):
+    conn = get_conn()
+    contest = conn.execute("SELECT id, name FROM contests WHERE id=?", (contest_id,)).fetchone()
+    if not contest:
+        raise HTTPException(status_code=404, detail="Contest not found")
+    name = contest[1]
+    return f"""<!doctype html><html><head><meta charset=utf-8>
+<title>Import ADIF – {name}</title>
+<style>body{{font-family:sans-serif;max-width:480px;margin:60px auto;padding:0 1rem}}
+h2{{margin-bottom:0.3em}}p{{color:#555;font-size:.9em}}
+input[type=file]{{display:block;margin:1rem 0}}
+button{{padding:.5rem 1.4rem;font-size:1rem;cursor:pointer}}
+#result{{margin-top:1rem;padding:.8rem;border-radius:4px;display:none}}
+.ok{{background:#d4edda;color:#155724}}.err{{background:#f8d7da;color:#721c24}}</style>
+</head><body>
+<h2>Import ADIF into contest</h2>
+<p><strong>{name}</strong></p>
+<p>Select your <code>.adi</code> or <code>.adif</code> file exported from N1MM.</p>
+<form id=f>
+  <input type=file id=file accept=".adi,.adif" required>
+  <button type=submit>Upload &amp; Import</button>
+</form>
+<div id=result></div>
+<script>
+document.getElementById('f').onsubmit=async e=>{{
+  e.preventDefault();
+  const fd=new FormData();fd.append('file',document.getElementById('file').files[0]);
+  const r=document.getElementById('result');r.style.display='block';
+  r.className='';r.textContent='Importing…';
+  try{{
+    const res=await fetch('/api/contests/{contest_id}/import_adif',{{method:'POST',body:fd}});
+    const j=await res.json();
+    if(res.ok){{r.className='ok';r.textContent=`Done! Inserted: ${{j.inserted}}, Updated: ${{j.updated}}, Skipped: ${{j.skipped}}. Total QSOs in contest: ${{j.total}}`;}}
+    else{{r.className='err';r.textContent='Error: '+JSON.stringify(j);}}
+  }}catch(err){{r.className='err';r.textContent='Error: '+err;}}
+}};
+</script></body></html>"""
 
 
 # ── Static files (frontend) ────────────────────────────────────────────────
