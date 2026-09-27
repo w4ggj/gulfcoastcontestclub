@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Resources — Gulf Coast Contest Club — GCCC</title>
+  <meta name="description" content="Contest resources for GCCC members — N1MM+ function key files, logging software, and useful links." />
+  <link rel="stylesheet" href="/assets/css/style.css" />
+  <style>
+    .resource-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .resource-table th { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); padding: 0.6rem 1rem; text-align: left; border-bottom: 2px solid var(--border-dark); background: var(--off-white); }
+    .resource-table td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    .resource-table tr:last-child td { border-bottom: none; }
+    .resource-table tr:hover td { background: var(--green-tint); }
+    .resource-table a { font-weight: 600; color: var(--green-primary); }
+    .resource-table a.dl-btn { display: inline-block; background: var(--green-primary); color: var(--white); font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 4px; text-decoration: none; }
+    .resource-table a.dl-btn:hover { background: var(--green-mid); color: var(--white); text-decoration: none; }
+    .file-note { font-size: 12px; color: var(--text-muted); }
+  </style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <div class="nav-inner">
+    <a href="/index.html" class="nav-brand"><img src="/assets/logo.webp" alt="GCCC Logo" style="height: 44px; width: auto; display: block;" />
+      <div class="nav-brand-text">
+        <span class="nav-brand-call">GCCC</span>
+        <span class="nav-brand-name">Gulf Coast Contest Club</span>
+      </div>
+    </a>
+    <button class="nav-toggle" aria-label="Toggle menu" onclick="document.querySelector('.nav-links').classList.toggle('open')">
+      <span></span><span></span><span></span>
+    </button>
+    <ul class="nav-links">
+      <li><a href="/index.html">Home</a></li>
+      <li><a href="/about.html">About</a></li>
+      <li><a href="/calendar.html">Calendar</a></li>
+      <li><a href="/results.html">Results</a></li>
+      <li><a href="/news.html">News</a></li>
+      <li><a href="/photos.html">Photos</a></li>
+      <li><a href="/resources.html" class="active">Resources</a></li>
+      <li><a href="/contact.html">Contact</a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="page-hero">
+  <div class="container">
+    <h1>Resources</h1>
+    <p>Contest tools, N1MM+ files, logging software, and useful links for GCCC members.</p>
+  </div>
+</div>
+
+<div class="section">
+  <div class="container">
+
+    <!-- N1MM Digital Function Key Files -->
+    <div class="section-label">N1MM Logger+</div>
+    <h2 class="section-title" style="margin-bottom: 0.5rem;">Digital function key files</h2>
+    <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Function key (.mc) files for digital/RTTY contests in N1MM+. These files pre-configure your F-key messages for each contest. To use, copy the .mc file into your N1MM+ macros folder and load it in the contest setup. Originally sourced from <a href="https://n1mmwp.hamdocs.com/mmfiles/categories/functionkey-digital/" target="_blank" rel="noopener">n1mmwp.hamdocs.com</a>.</p>
+
+    <div class="callout" style="margin-bottom: 1.5rem;">
+      To install: copy the .mc file to your N1MM+ macros directory (typically <code style="font-size: 12px; background: #f0f0f0; padding: 2px 6px; border-radius: 3px;">C:\Users\[you]\Documents\N1MM Logger+\MacroFiles\</code>), then load it in N1MM+ under <strong>Config → Function Keys → Digital</strong>.
+    </div>
+
+    <div class="card" style="overflow-x: auto; margin-bottom: 2.5rem;">
+      <table class="resource-table">
+        <thead>
+          <tr>
+            <th>File</th>
+            <th>Contest</th>
+            <th>Contributor</th>
+            <th>Download</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>ARRLRTTY.mc</code></td>
+            <td>ARRL RTTY Roundup</td>
+            <td class="file-note">K8UT</td>
+            <td><a href="/assets/mc/ARRLRTTY.mc" download class="dl-btn">Download</a></td>
+          </tr>
+          <tr>
+            <td><code>BARTGSRTTY.mc</code></td>
+            <td>BARTG HF RTTY</td>
+            <td class="file-note">K8UT</td>
+            <td><a href="/assets/mc/BARTGSRTTY.mc" download class="dl-btn">Download</a></td>
+          </tr>
+          <tr>
+            <td><code>BARTGRTTYS.mc</code></td>
+            <td>BARTG Sprint RTTY</td>
+            <td class="file-note">K8UT</td>
+            <td><a href="/assets/mc/BARTGRTTYS.mc" download class="dl-btn">Download</a></td>
+          </tr>
+          <tr>
+            <td><code>CQWPXRTTY.mc</code></td>
+            <td>CQ WPX RTTY</td>
+            <td class="file-note">K8UT</td>
+            <td><a href="/assets/mc/CQWPXRTTY.mc" download class="dl-btn">Download</a></td>
+          </tr>
+          <tr>
+            <td><code>CQWWRTTY.mc</code></td>
+            <td>CQ WW RTTY</td>
+            <td class="file-note">K8UT</td>
+            <td><a href="/assets/mc/CQWWRTTY.mc" download class="dl-btn">Download</a></td>
+          </tr>
+          <tr>
+            <td><code>Digi_Default_Messages.mc</code></td>
+            <td>Digital default messages</td>
+            <td class="file-note">G4OGB</td>
+            <td><a href="/assets/mc/Digi_Default_Messages.mc" download class="dl-btn">Download</a></td>
+          </tr>
+          <tr>
+            <td><code>DLDXRTTY.mc</code></td>
+            <td>DL DX RTTY</td>
+            <td class="file-note">K8UT</td>
+            <td><a href="/assets/mc/DLDXRTTY.mc" download class="dl-btn">Download</a></td>
+          </tr>
+          <tr>
+            <td><code>DRCGWWRTTY.mc</code></td>
+            <td>DRCG WW RTTY</td>
+            <td class="file-note">K8UT</td>
+            <td><a href="/assets/mc/DRCGWWRTTY.mc" download class="dl-btn">Download</a></td>
+          </tr>
+          <tr>
+            <td><code>DX_general.mc</code></td>
+            <td>DX general purpose</td>
+            <td class="file-note">K8UT</td>
+            <td><a href="/assets/mc/DX_general.mc" download class="dl-btn">Download</a></td>
+          </tr>
+          <tr>
+            <td><code>EARTTY.mc</code></td>
+            <td>EA RTTY</td>
+            <td class="file-note">K8UT</td>
+            <td><a href="/assets/mc/EARTTY.mc" download class="dl-btn">Download</a></td>
+          </tr>
+          <tr>
+            <td><code>JARTSWWRTY.mc</code></td>
+            <td>JARTS WW RTTY</td>
+            <td class="file-note">VE3KI</td>
+            <td><a href="/assets/mc/JARTSWWRTY.mc" download class="dl-btn">Download</a></td>
+          </tr>
+          <tr>
+            <td><code>MAKRORTTY.mc</code></td>
+            <td>MAKRO RTTY</td>
+            <td class="file-note">K8UT</td>
+            <td><a href="/assets/mc/MAKRORTTY.mc" download class="dl-btn">Download</a></td>
+          </tr>
+          <tr>
+            <td><code>NAQPRTTY.mc</code></td>
+            <td>NAQP RTTY</td>
+            <td class="file-note">VE3KI</td>
+            <td><a href="/assets/mc/NAQPRTTY.mc" download class="dl-btn">Download</a></td>
+          </tr>
+          <tr>
+            <td><code>OKDXRTTY.mc</code></td>
+            <td>OK DX RTTY</td>
+            <td class="file-note">K8UT</td>
+            <td><a href="/assets/mc/OKDXRTTY.mc" download class="dl-btn">Download</a></td>
+          </tr>
+          <tr>
+            <td><code>RRRTTY.mc</code></td>
+            <td>RR RTTY</td>
+            <td class="file-note">K8UT</td>
+            <td><a href="/assets/mc/RRRTTY.mc" download class="dl-btn">Download</a></td>
+          </tr>
+          <tr>
+            <td><code>RUSDXRTTY.mc</code></td>
+            <td>Russian DX RTTY</td>
+            <td class="file-note">K8UT</td>
+            <td><a href="/assets/mc/RUSDXRTTY.mc" download class="dl-btn">Download</a></td>
+          </tr>
+          <tr>
+            <td><code>SARTGRTTY.mc</code></td>
+            <td>SARTG WW RTTY</td>
+            <td class="file-note">K8UT</td>
+            <td><a href="/assets/mc/SARTGRTTY.mc" download class="dl-btn">Download</a></td>
+          </tr>
+          <tr>
+            <td><code>SCCRTTY.mc</code></td>
+            <td>SCC RTTY</td>
+            <td class="file-note">K8UT</td>
+            <td><a href="/assets/mc/SCCRTTY.mc" download class="dl-btn">Download</a></td>
+          </tr>
+          <tr>
+            <td><code>SPDXRTTY.mc</code></td>
+            <td>SP DX RTTY</td>
+            <td class="file-note">K8UT</td>
+            <td><a href="/assets/mc/SPDXRTTY.mc" download class="dl-btn">Download</a></td>
+          </tr>
+          <tr>
+            <td><code>SPRINTLADD.mc</code></td>
+            <td>RTTY Sprint (LADD)</td>
+            <td class="file-note">K8UT</td>
+            <td><a href="/assets/mc/SPRINTLADD.mc" download class="dl-btn">Download</a></td>
+          </tr>
+          <tr>
+            <td><code>SPRINTNS.mc</code></td>
+            <td>RTTY Sprint (NS)</td>
+            <td class="file-note">K8UT</td>
+            <td><a href="/assets/mc/SPRINTNS.mc" download class="dl-btn">Download</a></td>
+          </tr>
+          <tr>
+            <td><code>SPRINTRTTY.mc</code></td>
+            <td>RTTY Sprint</td>
+            <td class="file-note">K8UT</td>
+            <td><a href="/assets/mc/SPRINTRTTY.mc" download class="dl-btn">Download</a></td>
+          </tr>
+          <tr>
+            <td><code>TARAGRID.mc</code></td>
+            <td>TARA Grid Dip Shindig</td>
+            <td class="file-note">K8UT</td>
+            <td><a href="/assets/mc/TARAGRID.mc" download class="dl-btn">Download</a></td>
+          </tr>
+          <tr>
+            <td><code>TARAMELEE.mc</code></td>
+            <td>TARA Melee</td>
+            <td class="file-note">K8UT</td>
+            <td><a href="/assets/mc/TARAMELEE.mc" download class="dl-btn">Download</a></td>
+          </tr>
+          <tr>
+            <td><code>TEN-RTTY.mc</code></td>
+            <td>Ten-Ten RTTY</td>
+            <td class="file-note">K8UT</td>
+            <td><a href="/assets/mc/TEN-RTTY.mc" download class="dl-btn">Download</a></td>
+          </tr>
+          <tr>
+            <td><code>UKDXRTTY.mc</code></td>
+            <td>UK DX RTTY</td>
+            <td class="file-note">K8UT</td>
+            <td><a href="/assets/mc/UKDXRTTY.mc" download class="dl-btn">Download</a></td>
+          </tr>
+          <tr>
+            <td><code>UKRAINDX.mc</code></td>
+            <td>Ukraine DX</td>
+            <td class="file-note">K8UT</td>
+            <td><a href="/assets/mc/UKRAINDX.mc" download class="dl-btn">Download</a></td>
+          </tr>
+          <tr>
+            <td><code>VHFJune.mc</code></td>
+            <td>ARRL June VHF</td>
+            <td class="file-note">K8UT</td>
+            <td><a href="/assets/mc/VHFJune.mc" download class="dl-btn">Download</a></td>
+          </tr>
+          <tr>
+            <td><code>VOLTARTTY.mc</code></td>
+            <td>Volta RTTY</td>
+            <td class="file-note">K8UT</td>
+            <td><a href="/assets/mc/VOLTARTTY.mc" download class="dl-btn">Download</a></td>
+          </tr>
+          <tr>
+            <td><code>WAERTTY.mc</code></td>
+            <td>WAE RTTY</td>
+            <td class="file-note">K8UT</td>
+            <td><a href="/assets/mc/WAERTTY.mc" download class="dl-btn">Download</a></td>
+          </tr>
+          <tr>
+            <td><code>XERTTY.mc</code></td>
+            <td>XE RTTY</td>
+            <td class="file-note">VE3KI</td>
+            <td><a href="/assets/mc/XERTTY.mc" download class="dl-btn">Download</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Useful Links -->
+    <div class="section-label">Useful links</div>
+    <h2 class="section-title" style="margin-bottom: 1.5rem;">Contest resources</h2>
+    <div class="grid-3">
+      <div class="card card-sm">
+        <div class="section-label" style="margin-bottom: 0.75rem;">Logging software</div>
+        <ul style="list-style: none; font-size: 14px; display: flex; flex-direction: column; gap: 8px;">
+          <li><a href="https://n1mm.hamdocs.com" target="_blank" rel="noopener">→ N1MM+ Logger</a></li>
+          <li><a href="https://www.win-test.com" target="_blank" rel="noopener">→ Win-Test</a></li>
+          <li><a href="https://www.n3fjp.com" target="_blank" rel="noopener">→ N3FJP Software</a></li>
+          <li><a href="https://www.writelog.com" target="_blank" rel="noopener">→ WriteLog</a></li>
+        </ul>
+      </div>
+      <div class="card card-sm">
+        <div class="section-label" style="margin-bottom: 0.75rem;">Contest resources</div>
+        <ul style="list-style: none; font-size: 14px; display: flex; flex-direction: column; gap: 8px;">
+          <li><a href="https://www.3830scores.com" target="_blank" rel="noopener">→ 3830 Scores</a></li>
+          <li><a href="https://www.arrl.org/contest-calendar" target="_blank" rel="noopener">→ ARRL Contest Calendar</a></li>
+          <li><a href="https://www.cqww.com" target="_blank" rel="noopener">→ CQ World Wide</a></li>
+          <li><a href="https://floridaqsoparty.org" target="_blank" rel="noopener">→ Florida QSO Party</a></li>
+        </ul>
+      </div>
+      <div class="card card-sm">
+        <div class="section-label" style="margin-bottom: 0.75rem;">Propagation</div>
+        <ul style="list-style: none; font-size: 14px; display: flex; flex-direction: column; gap: 8px;">
+          <li><a href="https://www.hamqsl.com/solar.html" target="_blank" rel="noopener">→ HamQSL Solar Data</a></li>
+          <li><a href="https://www.dxmaps.com" target="_blank" rel="noopener">→ DX Maps</a></li>
+          <li><a href="https://www.ng3k.com/Misc/adxo.html" target="_blank" rel="noopener">→ DXpedition announcements</a></li>
+          <li><a href="https://www.qrz.com" target="_blank" rel="noopener">→ QRZ.com</a></li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer class="site-footer">
+  <div class="footer-call">GCCC</div>
+  <div class="footer-name">Gulf Coast Contest Club · Redington Beach, Florida</div>
+  <ul class="footer-links">
+    <li><a href="/index.html">Home</a></li>
+    <li><a href="/about.html">About</a></li>
+    <li><a href="/calendar.html">Calendar</a></li>
+    <li><a href="/results.html">Results</a></li>
+    <li><a href="/news.html">News</a></li>
+    <li><a href="/photos.html">Photos</a></li>
+    <li><a href="/resources.html">Resources</a></li>
+    <li><a href="/contact.html">Contact</a></li>
+  </ul>
+  <div class="footer-copy">73 de NE2CC &nbsp;·&nbsp; &copy; 2026 Gulf Coast Contest Club &nbsp;·&nbsp; Last updated: September 24, 2026</div>
+</footer>
+
+</body>
+</html>
