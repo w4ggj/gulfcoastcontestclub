@@ -139,6 +139,27 @@
     </div>
   </section>
 
+  <!-- ── Import Log ───────────────────────────────────────────────── -->
+  <section class="admin-section">
+    <h2 class="admin-section-title">Import Log</h2>
+    <p class="admin-hint">Import a completed or in-progress log from another operator. Supports ADIF (.adi / .adif) and Cabrillo (.log / .cbr). Existing QSOs are matched by ID and updated, not duplicated.</p>
+    <div class="admin-card">
+      <h3 class="card-title">Select Contest &amp; Upload</h3>
+      <div class="form-grid">
+        <label class="form-label">Contest
+          <select id="imp-contest" class="form-input">
+            <option value="">— select —</option>
+          </select>
+        </label>
+      </div>
+      <div class="form-actions" style="gap:0.75rem; flex-wrap:wrap; margin-top:1rem;">
+        <a id="imp-adif-link" class="btn btn-primary" href="#" target="_blank" style="pointer-events:none; opacity:0.5;">Open ADIF Import</a>
+        <a id="imp-cab-link"  class="btn btn-secondary" href="#" target="_blank" style="pointer-events:none; opacity:0.5;">Open Cabrillo Import</a>
+      </div>
+      <p style="font-size:13px; color:var(--text-muted); margin-top:0.75rem;">Opens in a new tab — select your file and click Upload.</p>
+    </div>
+  </section>
+
   <!-- ── Notification area ─────────────────────────────────────────── -->
   <div id="toast-area" class="toast-area"></div>
 

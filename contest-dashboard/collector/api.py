@@ -308,11 +308,95 @@ async def import_adif(contest_id: int, file: UploadFile = File(...)):
         raise HTTPException(status_code=404, detail="Contest not found")
     content = await file.read()
     text = content.decode("utf-8", errors="replace")
-    records = _parse_adif_records(text)
+    rows = [_adif_record_to_row(r) for r in _parse_adif_records(text)]
     now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    inserted, updated, skipped = _upsert_rows(conn, contest_id, rows, now)
+    conn.commit()
+    total = conn.execute(
+        "SELECT COUNT(*) FROM contacts WHERE contest_id=? AND deleted=0", (contest_id,)
+    ).fetchone()[0]
+    await broadcast({"type": "reload_stats", "contest_id": contest_id})
+    return {"inserted": inserted, "updated": updated, "skipped": skipped, "total": total}
+
+
+# ── Cabrillo Import ───────────────────────────────────────────────────────────
+
+def _band_from_khz(khz_str):
+    try:
+        khz = float(khz_str)
+    except (ValueError, TypeError):
+        return ""
+    mhz = khz / 1000.0
+    return _band_from_freq(str(mhz)) or ""
+
+
+def _parse_cabrillo_records(text: str, fallback_operator: str = ""):
+    """Parse Cabrillo QSO lines into dicts compatible with _upsert_row."""
+    records = []
+    header = {}
+    for line in text.splitlines():
+        line = line.rstrip()
+        if line.upper().startswith("CALLSIGN:"):
+            header["callsign"] = line.split(":", 1)[1].strip().upper()
+        elif line.upper().startswith("OPERATORS:"):
+            header["operators"] = line.split(":", 1)[1].strip().upper()
+        elif line.upper().startswith("QSO:"):
+            parts = line[4:].split()
+            # Minimum: freq mode date time mycall sent-rst sent-exch hiscall rcvd-rst rcvd-exch
+            if len(parts) < 8:
+                continue
+            freq_khz = parts[0]
+            mode_cab = parts[1].upper()
+            date_s   = parts[2]   # YYYY-MM-DD
+            time_s   = parts[3]   # HHMM
+            mycall   = parts[4].upper()
+            # sent RST and exchange follow, then hiscall
+            # We find hiscall by scanning: after mycall, skip rst+exch fields until next callsign-like token
+            # Simpler: CQ WW has exactly: mycall snt-rst snt-zone hiscall rcvd-rst rcvd-zone
+            # Other contests may vary; handle both 10-field and 9-field layouts
+            # Locate hiscall: after mycall+snt-rst+snt-exchange, find next callsign-like token.
+            # Callsign has both letters and digits and length >= 3; RST (599), zone (05),
+            # state (FL) and DX are skipped by this test.
+            _call_re = re.compile(r'^[A-Z0-9]{3,}$')
+            _has_digit = re.compile(r'\d')
+            _has_alpha = re.compile(r'[A-Z]')
+            hiscall = None
+            for _i, _p in enumerate(parts[5:], start=5):
+                _pu = _p.upper()
+                if _call_re.match(_pu) and _has_digit.search(_pu) and _has_alpha.search(_pu):
+                    hiscall = _pu
+                    break
+            if not hiscall:
+                continue
+
+            mode_map = {"RY": "RTTY", "DG": "RTTY", "CW": "CW", "PH": "SSB", "FM": "FM"}
+            mode = mode_map.get(mode_cab, mode_cab)
+
+            band = _band_from_khz(freq_khz)
+
+            try:
+                qso_utc = datetime.strptime(f"{date_s} {time_s}", "%Y-%m-%d %H%M").replace(
+                    tzinfo=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            except ValueError:
+                qso_utc = None
+
+            operator = (header.get("callsign") or fallback_operator or mycall).upper()
+            key = f"{hiscall}|{qso_utc}|{band}|{mode}|{operator}"
+            n1mm_id = "cab_" + hashlib.md5(key.encode()).hexdigest()
+
+            records.append(dict(
+                n1mm_id=n1mm_id, call=hiscall, band=band, mode=mode,
+                operator=operator, rx_freq=None,
+                tx_freq=str(float(freq_khz) / 1000) if freq_khz else None,
+                points=0, station_name=mycall, radio_nr=1, is_original=1,
+                qso_utc=qso_utc, is_mult1=0, is_mult2=0, is_mult3=0, is_run_qso=0,
+            ))
+    return records
+
+
+def _upsert_rows(conn, contest_id: int, rows: list, now: str):
     inserted = updated = skipped = 0
-    for r in records:
-        row = _adif_record_to_row(r)
+    for row in rows:
         if not row:
             skipped += 1
             continue
@@ -345,6 +429,20 @@ async def import_adif(contest_id: int, file: UploadFile = File(...)):
                   row["qso_utc"], row["is_mult1"], row["is_mult2"], row["is_mult3"],
                   row["is_run_qso"], now))
             inserted += 1
+    return inserted, updated, skipped
+
+
+@app.post("/api/contests/{contest_id}/import_cabrillo")
+async def import_cabrillo(contest_id: int, file: UploadFile = File(...)):
+    conn = get_conn()
+    contest = conn.execute("SELECT id, name FROM contests WHERE id=?", (contest_id,)).fetchone()
+    if not contest:
+        raise HTTPException(status_code=404, detail="Contest not found")
+    content = await file.read()
+    text = content.decode("utf-8", errors="replace")
+    rows = _parse_cabrillo_records(text)
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    inserted, updated, skipped = _upsert_rows(conn, contest_id, rows, now)
     conn.commit()
     total = conn.execute(
         "SELECT COUNT(*) FROM contacts WHERE contest_id=? AND deleted=0", (contest_id,)
@@ -361,35 +459,51 @@ def import_adif_form(contest_id: int):
         raise HTTPException(status_code=404, detail="Contest not found")
     name = contest[1]
     return f"""<!doctype html><html><head><meta charset=utf-8>
-<title>Import ADIF – {name}</title>
-<style>body{{font-family:sans-serif;max-width:480px;margin:60px auto;padding:0 1rem}}
+<title>Import Log – {name}</title>
+<style>body{{font-family:sans-serif;max-width:520px;margin:60px auto;padding:0 1rem}}
 h2{{margin-bottom:0.3em}}p{{color:#555;font-size:.9em}}
+h3{{margin:1.5rem 0 .3rem;font-size:1rem}}
 input[type=file]{{display:block;margin:1rem 0}}
 button{{padding:.5rem 1.4rem;font-size:1rem;cursor:pointer}}
-#result{{margin-top:1rem;padding:.8rem;border-radius:4px;display:none}}
-.ok{{background:#d4edda;color:#155724}}.err{{background:#f8d7da;color:#721c24}}</style>
+.result{{margin-top:1rem;padding:.8rem;border-radius:4px;display:none}}
+.ok{{background:#d4edda;color:#155724}}.err{{background:#f8d7da;color:#721c24}}
+hr{{margin:2rem 0;border:none;border-top:1px solid #ddd}}</style>
 </head><body>
-<h2>Import ADIF into contest</h2>
-<p><strong>{name}</strong></p>
-<p>Select your <code>.adi</code> or <code>.adif</code> file exported from N1MM.</p>
-<form id=f>
-  <input type=file id=file accept=".adi,.adif" required>
-  <button type=submit>Upload &amp; Import</button>
+<h2>Import Log — {name}</h2>
+
+<h3>ADIF (.adi / .adif)</h3>
+<p>Export from N1MM: <em>File → Export → ADIF</em></p>
+<form id=fa>
+  <input type=file id=fa-file accept=".adi,.adif" required>
+  <button type=submit>Upload ADIF</button>
 </form>
-<div id=result></div>
+<div id=ra class=result></div>
+
+<hr>
+
+<h3>Cabrillo (.log / .cbr)</h3>
+<p>The Cabrillo file submitted for the contest (or exported from N1MM).</p>
+<form id=fc>
+  <input type=file id=fc-file accept=".log,.cbr,.txt" required>
+  <button type=submit>Upload Cabrillo</button>
+</form>
+<div id=rc class=result></div>
+
 <script>
-document.getElementById('f').onsubmit=async e=>{{
-  e.preventDefault();
-  const fd=new FormData();fd.append('file',document.getElementById('file').files[0]);
-  const r=document.getElementById('result');r.style.display='block';
-  r.className='';r.textContent='Importing…';
-  try{{
-    const res=await fetch('/api/contests/{contest_id}/import_adif',{{method:'POST',body:fd}});
-    const j=await res.json();
-    if(res.ok){{r.className='ok';r.textContent=`Done! Inserted: ${{j.inserted}}, Updated: ${{j.updated}}, Skipped: ${{j.skipped}}. Total QSOs in contest: ${{j.total}}`;}}
-    else{{r.className='err';r.textContent='Error: '+JSON.stringify(j);}}
-  }}catch(err){{r.className='err';r.textContent='Error: '+err;}}
-}};
+async function doUpload(formId, fileId, url, resultId) {{
+  const fd = new FormData();
+  fd.append('file', document.getElementById(fileId).files[0]);
+  const r = document.getElementById(resultId);
+  r.style.display = 'block'; r.className = 'result'; r.textContent = 'Importing…';
+  try {{
+    const res = await fetch(url, {{method:'POST', body:fd}});
+    const j = await res.json();
+    if (res.ok) {{ r.className='result ok'; r.textContent=`Done! Inserted: ${{j.inserted}}, Updated: ${{j.updated}}, Skipped: ${{j.skipped}}. Total QSOs: ${{j.total}}`; }}
+    else {{ r.className='result err'; r.textContent='Error: '+JSON.stringify(j); }}
+  }} catch(e) {{ r.className='result err'; r.textContent='Error: '+e; }}
+}}
+document.getElementById('fa').onsubmit = e => {{ e.preventDefault(); doUpload('fa','fa-file','/api/contests/{contest_id}/import_adif','ra'); }};
+document.getElementById('fc').onsubmit = e => {{ e.preventDefault(); doUpload('fc','fc-file','/api/contests/{contest_id}/import_cabrillo','rc'); }};
 </script></body></html>"""
 
 
