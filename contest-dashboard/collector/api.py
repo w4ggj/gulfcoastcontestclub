@@ -221,6 +221,130 @@ def add_station(contest_id: int, body: StationSetup):
     return {"station_id": sid}
 
 
+# ── CQ WW Scoring helpers ─────────────────────────────────────────────────
+
+# Prefix → continent (2-char codes: NA SA EU AF AS OC AN)
+_PFX_CONTINENT = {
+    # North America — USA
+    'W':'NA','K':'NA','N':'NA','AA':'NA','AB':'NA','AC':'NA','AD':'NA','AE':'NA',
+    'AF':'NA','AG':'NA','AI':'NA','AJ':'NA','AK':'NA',
+    'WA':'NA','WB':'NA','WC':'NA','WD':'NA','WE':'NA','WF':'NA','WG':'NA',
+    'WH':'NA','WI':'NA','WJ':'NA','WK':'NA','WL':'NA','WM':'NA','WN':'NA',
+    'WO':'NA','WP':'NA','WQ':'NA','WR':'NA','WS':'NA','WT':'NA','WU':'NA',
+    'WV':'NA','WW':'NA','WX':'NA','WY':'NA','WZ':'NA',
+    'KA':'NA','KB':'NA','KC':'NA','KD':'NA','KE':'NA','KF':'NA','KG':'NA',
+    'KH':'NA','KI':'NA','KJ':'NA','KK':'NA','KL':'NA','KM':'NA','KN':'NA',
+    'KO':'NA','KP':'NA','KQ':'NA','KR':'NA','KS':'NA','KT':'NA','KU':'NA',
+    'KV':'NA','KW':'NA','KX':'NA','KY':'NA','KZ':'NA',
+    'NA':'NA','NB':'NA','NC':'NA','ND':'NA','NE':'NA','NF':'NA','NG':'NA',
+    'NH':'NA','NI':'NA','NJ':'NA','NK':'NA','NL':'NA','NM':'NA','NN':'NA',
+    'NO':'NA','NP':'NA','NQ':'NA','NR':'NA','NS':'NA','NT':'NA','NU':'NA',
+    'NV':'NA','NW':'NA','NX':'NA','NY':'NA','NZ':'NA',
+    # Canada
+    'VE':'NA','VA':'NA','VY':'NA','VO':'NA','VB':'NA',
+    # Mexico & C. America
+    'XE':'NA','XF':'NA','TI':'NA','HP':'NA','TG':'NA','HQ':'NA','YS':'NA',
+    # Caribbean
+    'CO':'NA','CM':'NA','HH':'NA','HI':'NA','VP9':'NA','ZF':'NA',
+    '8P':'NA','J3':'NA','J7':'NA','J8':'NA','J6':'NA','V4':'NA','V3':'NA',
+    'KP4':'NA','KP2':'NA','NP2':'NA','NP3':'NA','NP4':'NA',
+    'VP2E':'NA','VP2M':'NA','VP2V':'NA','VP5':'NA',
+    'P4':'NA','PJ2':'NA','PJ4':'NA','6Y':'NA',
+    # South America
+    'PY':'SA','PP':'SA','PQ':'SA','PR':'SA','PS':'SA','PT':'SA','PU':'SA',
+    'PV':'SA','PW':'SA','PX':'SA',
+    'LU':'SA','LS':'SA','LT':'SA','LV':'SA','LW':'SA',
+    'CE':'SA','OA':'SA','HC':'SA','HK':'SA','YV':'SA','4M':'SA',
+    'ZP':'SA','CX':'SA','CP':'SA','FY':'SA',
+    # Europe
+    'G':'EU','M':'EU','GX':'EU','GI':'EU','MI':'EU','GW':'EU','MW':'EU',
+    'GM':'EU','MM':'EU','GD':'EU','GJ':'EU','GU':'EU','EI':'EU',
+    'DL':'EU','DM':'EU','DN':'EU','DP':'EU','DQ':'EU','DR':'EU',
+    'DA':'EU','DB':'EU','DC':'EU','DD':'EU','DE':'EU','DF':'EU',
+    'DG':'EU','DH':'EU','DI':'EU','DJ':'EU','DK':'EU',
+    'F':'EU','I':'EU','IS':'EU','IT9':'EU',
+    'EA':'EU','EB':'EU','EC':'EU','ED':'EU','EE':'EU','EF':'EU','EG':'EU','EH':'EU',
+    'EA8':'EU','EA9':'EU','CT':'EU','CR':'EU','CR3':'EU','CU':'EU','CT3':'EU',
+    'PA':'EU','PD':'EU','PE':'EU','PH':'EU','PI':'EU',
+    'SM':'EU','SA':'EU','SB':'EU','SC':'EU','SD':'EU','SE':'EU',
+    'SF':'EU','SG':'EU','SH':'EU','SI':'EU','SJ':'EU','SK':'EU','SL':'EU',
+    'OH':'EU','OG':'EU','OF':'EU','OI':'EU','OJ':'EU',
+    'OY':'EU','TF':'EU',
+    'LA':'EU','LB':'EU','LC':'EU',
+    'OZ':'EU','OV':'EU','OW':'EU','OU':'EU','OX':'EU',
+    'SP':'EU','SN':'EU','SO':'EU','SQ':'EU','SR':'EU','HF':'EU',
+    'OK':'EU','OL':'EU','OM':'EU',
+    'HA':'EU','HG':'EU',
+    'YO':'EU','YP':'EU','YQ':'EU','YR':'EU',
+    'LZ':'EU','SV':'EU','SX':'EU','J4':'EU','SV5':'EU','SV9':'EU',
+    'OE':'EU','HB9':'EU','HB0':'EU',
+    'ON':'EU','OO':'EU','OP':'EU','OR':'EU','OS':'EU','LX':'EU',
+    'TK':'EU','9H':'EU','3A':'EU','T7':'EU','ZB':'EU','C3':'EU',
+    'YU':'EU','YT':'EU','S5':'EU','E7':'EU','9A':'EU',
+    'Z3':'EU','ZA':'EU','4O':'EU','Z6':'EU',
+    'YL':'EU','LY':'EU','ES':'EU',
+    'TA':'EU','TC':'EU','5B':'EU','P3':'EU',
+    'UR':'EU','US':'EU','UT':'EU','UU':'EU','UV':'EU','UW':'EU',
+    'UX':'EU','UY':'EU','UZ':'EU','EM':'EU','EN':'EU','EO':'EU',
+    'EW':'EU','EU':'EU',
+    'UA':'EU','RA':'EU','RB':'EU','RC':'EU','RD':'EU','RE':'EU','RF':'EU',
+    'RG':'EU','RH':'EU','RI':'EU','RJ':'EU','RK':'EU','RL':'EU','RM':'EU',
+    'RN':'EU','RO':'EU','RP':'EU','RQ':'EU','RS':'EU','RT':'EU','RU':'EU',
+    'RV':'EU','RW':'EU','RX':'EU','RY':'EU','RZ':'EU',
+    'OD':'AS','4X':'AS','4Z':'AS','JY':'AS','YK':'AS',
+    '4L':'AS','EK':'AS','4J':'AS','4K':'AS','EP':'AS','EQ':'AS',
+    'A4':'AS','A7':'AS','A6':'AS','9K':'AS','YI':'AS','HZ':'AS','7Z':'AS',
+    'UN':'AS','UK':'AS','EY':'AS',
+    'UA9':'AS','UA0':'AS',
+    'JA':'AS','JB':'AS','JE':'AS','JF':'AS','JG':'AS','JH':'AS','JI':'AS',
+    'JJ':'AS','JK':'AS','JL':'AS','JM':'AS','JN':'AS','JO':'AS','JP':'AS',
+    'JQ':'AS','JR':'AS','JS':'AS','JD':'AS',
+    '7J':'AS','7K':'AS','7L':'AS','7M':'AS','7N':'AS',
+    '8J':'AS','8K':'AS','8L':'AS','8M':'AS','8N':'AS',
+    'HL':'AS','DS':'AS','DT':'AS',
+    'BY':'AS','BA':'AS','BD':'AS','BG':'AS','BH':'AS','BI':'AS',
+    'BJ':'AS','BL':'AS','BT':'AS','BV':'AS','BU':'AS','BW':'AS','BX':'AS',
+    'VU':'AS','AT':'AS','AU':'AS','AP':'AS','4S':'AS',
+    'S2':'AS','S3':'AS','9N':'AS','A5':'AS',
+    'XV':'AS','XU':'AS','XW':'AS','HS':'AS','XZ':'AS',
+    '9M2':'AS','9M6':'AS','9W':'AS',
+    'YB':'OC','YC':'OC','YD':'OC',
+    'DU':'OC','DV':'OC','DW':'OC','DX':'OC',
+    '9V':'AS','VR':'AS',
+    'VK':'OC','VL':'OC','ZL':'OC','YJ':'OC','FO':'OC','T8':'OC','V6':'OC',
+    # Africa
+    'ZS':'AF','ZR':'AF','ZT':'AF','ZU':'AF',
+    'SU':'AF','CN':'AF','7X':'AF','TS':'AF','5A':'AF',
+    'ST':'AF','SS':'AF','5Z':'AF','9L':'AF','9G':'AF','5N':'AF',
+    'EL':'AF','TU':'AF','D2':'AF','9J':'AF','Z2':'AF',
+    'V5':'AF','A2':'AF','C9':'AF','5R':'AF','VQ9':'AF','ZD8':'AF','ZD7':'AF',
+}
+
+def _callsign_continent(call: str) -> str:
+    call = call.upper().replace('/', '').strip()
+    for l in (4, 3, 2, 1):
+        c = _PFX_CONTINENT.get(call[:l])
+        if c:
+            return c
+    # US fallback
+    if re.match(r'^[KWNA][A-Z]', call):
+        return 'NA'
+    return ''
+
+
+def _cqww_points(worked_call: str, op_call: str) -> int:
+    op_cont   = _callsign_continent(op_call)
+    wrk_cont  = _callsign_continent(worked_call)
+    if not wrk_cont:
+        return 3  # unknown → assume DX
+    if op_cont == wrk_cont:
+        # same continent — 0 if same country prefix, 1 if different
+        op_pfx  = op_call[:2]
+        wrk_pfx = worked_call[:2]
+        return 0 if op_pfx == wrk_pfx else 1
+    return 3
+
+
 # ── ADIF Import ───────────────────────────────────────────────────────────
 
 def _parse_adif_records(text: str):
@@ -361,10 +485,12 @@ def _parse_cabrillo_records(text: str, fallback_operator: str = ""):
             _has_digit = re.compile(r'\d')
             _has_alpha = re.compile(r'[A-Z]')
             hiscall = None
+            hiscall_idx = None
             for _i, _p in enumerate(parts[5:], start=5):
                 _pu = _p.upper()
                 if _call_re.match(_pu) and _has_digit.search(_pu) and _has_alpha.search(_pu):
                     hiscall = _pu
+                    hiscall_idx = _i
                     break
             if not hiscall:
                 continue
@@ -384,12 +510,25 @@ def _parse_cabrillo_records(text: str, fallback_operator: str = ""):
             key = f"{hiscall}|{qso_utc}|{band}|{mode}|{operator}"
             n1mm_id = "cab_" + hashlib.md5(key.encode()).hexdigest()
 
+            # CQ WW scoring: derive points from continent comparison
+            points = _cqww_points(hiscall, operator)
+
+            # Extract received zone from fields after hiscall (first numeric-only field)
+            rcvd_zone = None
+            for _rp in parts[hiscall_idx + 1:]:
+                if _rp.isdigit():
+                    rcvd_zone = _rp
+                    break
+
+            # is_mult1 = new CQ zone on this band (we flag it; dashboard just displays)
+            is_mult1 = 1 if rcvd_zone else 0
+
             records.append(dict(
                 n1mm_id=n1mm_id, call=hiscall, band=band, mode=mode,
                 operator=operator, rx_freq=None,
                 tx_freq=str(float(freq_khz) / 1000) if freq_khz else None,
-                points=0, station_name=mycall, radio_nr=1, is_original=1,
-                qso_utc=qso_utc, is_mult1=0, is_mult2=0, is_mult3=0, is_run_qso=0,
+                points=points, station_name=mycall, radio_nr=1, is_original=1,
+                qso_utc=qso_utc, is_mult1=is_mult1, is_mult2=0, is_mult3=0, is_run_qso=0,
             ))
     return records
 
