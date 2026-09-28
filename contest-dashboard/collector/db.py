@@ -251,8 +251,8 @@ def get_live_stats(conn: sqlite3.Connection, contest_id: int) -> dict:
     total = conn.execute(f"SELECT COUNT(*) as n {base}", (contest_id,)).fetchone()["n"]
 
     bands = conn.execute(f"""
-        SELECT band, COUNT(*) as qsos, SUM(points) as pts
-        {base} GROUP BY band ORDER BY band
+        SELECT UPPER(band) as band, COUNT(*) as qsos, SUM(points) as pts
+        {base} GROUP BY UPPER(band) ORDER BY UPPER(band)
     """, (contest_id,)).fetchall()
 
     operators = conn.execute(f"""

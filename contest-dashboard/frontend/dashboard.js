@@ -129,7 +129,7 @@ function computeStatsFromContacts(contacts) {
 
   for (const c of contacts) {
     total++;
-    const band = c.band || '?';
+    const band = (c.band || '?').toUpperCase();
     if (!byBand[band]) byBand[band] = { band, qsos: 0, pts: 0 };
     byBand[band].qsos++;
     byBand[band].pts += c.points || 0;
