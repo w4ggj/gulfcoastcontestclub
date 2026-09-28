@@ -272,12 +272,12 @@ def get_live_stats(conn: sqlite3.Connection, contest_id: int) -> dict:
     """, (contest_id,)).fetchall()
 
     stations = conn.execute(f"""
-        SELECT station_name, radio_nr, COUNT(*) as qsos,
+        SELECT operator as station_name, NULL as radio_nr, COUNT(*) as qsos,
                MAX(qso_utc) as last_qso,
                MAX(band) as last_band,
                MAX(mode) as last_mode
-        {base} AND station_name IS NOT NULL
-        GROUP BY station_name, radio_nr ORDER BY station_name, radio_nr
+        {base} AND operator IS NOT NULL
+        GROUP BY operator ORDER BY qsos DESC
     """, (contest_id,)).fetchall()
 
     # Per-operator per-band
