@@ -319,7 +319,8 @@
   vertical-align: middle;
 }
 .lb-table tbody tr:hover { background: var(--dash-surface); }
-.lb-table tbody tr:first-child td { font-size: 1.1em; }
+.lb-table tbody tr:first-child td.lb-op   { font-size: 1.75rem; }
+.lb-table tbody tr:first-child td.lb-qsos { font-size: 2rem; }
 
 .lb-rank { width: 2.5rem; color: var(--dash-text-sub); font-size: 1.1rem; }
 .lb-op { font-size: 1.45rem; font-weight: 700; color: var(--white); letter-spacing: 0.04em; }
