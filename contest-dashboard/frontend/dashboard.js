@@ -168,9 +168,10 @@ function computeStatsFromContacts(contacts) {
 function handleMessage(msg) {
   switch (msg.type) {
     case 'snapshot':
-      state.contest = msg.contest;
-      state.stats   = msg.stats;
-      state.score   = msg.score;
+      state.contest       = msg.contest;
+      state.stats         = msg.stats;
+      state.score         = msg.score;
+      state.combinedScore = msg.combined_score ?? null;
       if (state.contest) { showDashboard(); renderAll(); startRotation(); }
       else                { showIdle(); }
       break;
@@ -279,17 +280,15 @@ function renderStats() {
 }
 
 function renderScore() {
-  const sc = state.score;
-  // Fall back to contacts-derived totals when no N1MM score snapshot exists
-  const fbPts   = state.stats?.total_pts   ?? null;
-  const fbMults = state.stats?.total_mults ?? null;
-  const qsoScore = sc?.score
-    ?? (sc?.total_points && sc?.total_mults ? sc.total_points * sc.total_mults : null)
-    ?? (fbPts != null && fbMults != null ? fbPts * fbMults : null)
-    ?? (fbPts != null ? fbPts : null);
-  const mults    = sc?.total_mults ?? sc?.mults  ?? fbMults ?? null;
-  const pts      = sc?.total_points ?? sc?.points ?? fbPts  ?? null;
-  const qsos     = sc?.total_qsos  ?? sc?.qsos   ?? null;
+  const sc  = state.score;          // N1MM live snapshot (single-station)
+  const cs  = state.combinedScore;  // DB-calculated across all operators
+  // Use combined (all-operator) score when available; fall back to N1MM snapshot
+  const mults    = cs?.total_mults  ?? sc?.total_mults ?? sc?.mults  ?? state.stats?.total_mults ?? null;
+  const pts      = cs?.total_points ?? sc?.total_points ?? sc?.points ?? state.stats?.total_pts  ?? null;
+  const qsoScore = cs?.score
+    ?? sc?.score
+    ?? (pts != null && mults != null ? pts * mults : null);
+  const qsos     = sc?.total_qsos ?? sc?.qsos ?? null;
   const bonus    = sc?.bonus_points ?? 0;
   const total    = qsoScore != null ? qsoScore + bonus : null;
 
