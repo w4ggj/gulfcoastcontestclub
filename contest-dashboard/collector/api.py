@@ -115,7 +115,7 @@ def live_contest():
 def get_contest_contacts(contest_id: int):
     conn = get_conn()
     rows = conn.execute(
-        "SELECT call, band, operator, mode, qso_utc FROM contacts "
+        "SELECT call, band, operator, mode, qso_utc, points, is_mult1, station_name, radio_nr FROM contacts "
         "WHERE contest_id=? AND deleted=0 ORDER BY qso_utc",
         (contest_id,)
     ).fetchall()
