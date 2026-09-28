@@ -129,6 +129,15 @@ CREATE INDEX IF NOT EXISTS idx_contacts_operator ON contacts(contest_id, operato
 CREATE INDEX IF NOT EXISTS idx_contacts_time ON contacts(contest_id, qso_utc);
 CREATE INDEX IF NOT EXISTS idx_contacts_station ON contacts(contest_id, station_name);
 CREATE INDEX IF NOT EXISTS idx_score_contest ON score_snapshots(contest_id, snapshot_utc);
+
+CREATE TABLE IF NOT EXISTS imported_log_scores (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    contest_id    INTEGER NOT NULL REFERENCES contests(id),
+    operator      TEXT NOT NULL,
+    claimed_score INTEGER NOT NULL,
+    imported_at   TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
+    UNIQUE(contest_id, operator)
+);
 """
 
 

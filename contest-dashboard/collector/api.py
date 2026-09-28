@@ -59,6 +59,35 @@ async def broadcast(event: dict) -> None:
     _ws_clients.difference_update(dead)
 
 
+def _build_combined_score(conn, contest_id: int, n1mm_score_row) -> dict:
+    """Build a combined score: N1MM live score + Cabrillo claimed scores."""
+    # Live N1MM score (single active station)
+    n1mm_total = 0
+    if n1mm_score_row:
+        sc = dict(n1mm_score_row)
+        n1mm_total = sc.get("score") or 0
+
+    # Claimed scores from imported Cabrillo logs
+    imported_row = conn.execute(
+        "SELECT SUM(claimed_score) as total FROM imported_log_scores WHERE contest_id=?",
+        (contest_id,)
+    ).fetchone()
+    imported_total = (imported_row["total"] or 0) if imported_row else 0
+
+    # Per-operator breakdown for tooltip/detail
+    imported_ops = conn.execute(
+        "SELECT operator, claimed_score FROM imported_log_scores WHERE contest_id=? ORDER BY claimed_score DESC",
+        (contest_id,)
+    ).fetchall()
+
+    return {
+        "score":          n1mm_total + imported_total,
+        "n1mm_score":     n1mm_total,
+        "imported_score": imported_total,
+        "imported_ops":   [dict(r) for r in imported_ops],
+    }
+
+
 @app.websocket("/ws")
 async def websocket_endpoint(ws: WebSocket):
     await ws.accept()
@@ -71,18 +100,13 @@ async def websocket_endpoint(ws: WebSocket):
         if contest:
             stats = db.get_live_stats(conn, contest["id"])
             score = db.get_latest_score(conn, contest["id"])
-            cs_row = conn.execute(
-                "SELECT SUM(points) as total_pts, SUM(is_mult1) as total_mults FROM contacts "
-                "WHERE contest_id=? AND deleted=0", (contest["id"],)
-            ).fetchone()
-            cs_pts   = cs_row["total_pts"]   or 0
-            cs_mults = cs_row["total_mults"] or 0
+            combined_score = _build_combined_score(conn, contest["id"], score)
             await ws.send_text(json.dumps({
                 "type":           "snapshot",
                 "contest":        dict(contest),
                 "stats":          stats,
                 "score":          dict(score) if score else None,
-                "combined_score": {"total_points": cs_pts, "total_mults": cs_mults, "score": cs_pts * cs_mults},
+                "combined_score": combined_score,
             }))
         else:
             await ws.send_text(json.dumps({"type": "no_live_contest"}))
@@ -141,18 +165,7 @@ def get_contest(contest_id: int):
     if score and score.get("band_breakdown"):
         score["band_breakdown"] = json.loads(score["band_breakdown"])
     stations = db.get_station_configs(conn, contest_id)
-    # Combined score from all QSOs in DB (includes imported logs N1MM doesn't know about)
-    cs_row = conn.execute(
-        "SELECT SUM(points) as total_pts, SUM(is_mult1) as total_mults FROM contacts "
-        "WHERE contest_id=? AND deleted=0", (contest_id,)
-    ).fetchone()
-    combined_pts   = cs_row["total_pts"]   or 0
-    combined_mults = cs_row["total_mults"] or 0
-    combined_score = {
-        "total_points": combined_pts,
-        "total_mults":  combined_mults,
-        "score":        combined_pts * combined_mults,
-    }
+    combined_score = _build_combined_score(conn, contest_id, score)
     return {
         "contest":        dict(c),
         "stats":          stats,
@@ -475,15 +488,22 @@ def _band_from_khz(khz_str):
 
 
 def _parse_cabrillo_records(text: str, fallback_operator: str = ""):
-    """Parse Cabrillo QSO lines into dicts compatible with _upsert_row."""
+    """Parse Cabrillo QSO lines into dicts compatible with _upsert_row.
+    Returns (records, claimed_score) where claimed_score may be None."""
     records = []
     header = {}
+    claimed_score = None
     for line in text.splitlines():
         line = line.rstrip()
         if line.upper().startswith("CALLSIGN:"):
             header["callsign"] = line.split(":", 1)[1].strip().upper()
         elif line.upper().startswith("OPERATORS:"):
             header["operators"] = line.split(":", 1)[1].strip().upper()
+        elif line.upper().startswith("CLAIMED-SCORE:"):
+            try:
+                claimed_score = int(line.split(":", 1)[1].strip().replace(",", ""))
+            except (ValueError, IndexError):
+                pass
         elif line.upper().startswith("QSO:"):
             parts = line[4:].split()
             # Minimum: freq mode date time mycall sent-rst sent-exch hiscall rcvd-rst rcvd-exch
@@ -550,7 +570,7 @@ def _parse_cabrillo_records(text: str, fallback_operator: str = ""):
                 points=points, station_name=mycall, radio_nr=1, is_original=1,
                 qso_utc=qso_utc, is_mult1=is_mult1, is_mult2=0, is_mult3=0, is_run_qso=0,
             ))
-    return records
+    return records, claimed_score, header
 
 
 def _upsert_rows(conn, contest_id: int, rows: list, now: str):
@@ -599,15 +619,25 @@ async def import_cabrillo(contest_id: int, file: UploadFile = File(...)):
         raise HTTPException(status_code=404, detail="Contest not found")
     content = await file.read()
     text = content.decode("utf-8", errors="replace")
-    rows = _parse_cabrillo_records(text)
+    rows, claimed_score, header = _parse_cabrillo_records(text)
+    operator = (header.get("callsign") or "").upper()
     now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     inserted, updated, skipped = _upsert_rows(conn, contest_id, rows, now)
+    if claimed_score is not None and operator:
+        conn.execute("""
+            INSERT INTO imported_log_scores (contest_id, operator, claimed_score)
+            VALUES (?,?,?)
+            ON CONFLICT(contest_id, operator) DO UPDATE SET
+                claimed_score=excluded.claimed_score,
+                imported_at=strftime('%Y-%m-%dT%H:%M:%SZ','now')
+        """, (contest_id, operator, claimed_score))
     conn.commit()
     total = conn.execute(
         "SELECT COUNT(*) FROM contacts WHERE contest_id=? AND deleted=0", (contest_id,)
     ).fetchone()[0]
     await broadcast({"type": "reload_stats", "contest_id": contest_id})
-    return {"inserted": inserted, "updated": updated, "skipped": skipped, "total": total}
+    return {"inserted": inserted, "updated": updated, "skipped": skipped, "total": total,
+            "claimed_score": claimed_score, "operator": operator}
 
 
 @app.get("/api/contests/{contest_id}/import_adif", response_class=HTMLResponse)
