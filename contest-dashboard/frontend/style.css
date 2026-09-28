@@ -744,3 +744,93 @@ select.form-input { appearance: none; cursor: pointer; }
 }
 .donut-legend-label { color: var(--dash-text); font-weight: 600; }
 .donut-legend-val   { color: var(--dash-text-sub); }
+
+/* ── Mobile responsive (≤ 768px) ─────────────────────────────────────── */
+@media (max-width: 768px) {
+
+  /* Allow page to scroll on mobile instead of fixed viewport */
+  .dashboard-body {
+    height: auto;
+    min-height: 100dvh;
+    overflow: auto;
+  }
+  .screen { height: auto; min-height: 100dvh; }
+
+  /* Compact header */
+  .dash-header {
+    height: auto;
+    padding: 0.5rem 1rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .dash-logo { height: 28px; }
+  .dash-contest-name { font-size: 1rem; }
+  .dash-header-right { gap: 0.75rem; }
+  .hdr-stat-val { font-size: 1.3rem; }
+  .hdr-stat-lbl { font-size: 0.6rem; }
+
+  /* Views: stack normally, no absolute positioning */
+  .dash-main { overflow: visible; }
+  .dash-view {
+    position: static;
+    padding: 0.75rem;
+    gap: 0.75rem;
+    overflow: visible;
+  }
+
+  /* Score row: 2-column grid on mobile */
+  .score-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+  /* Total Score tile spans full width */
+  .score-tile.accent { grid-column: 1 / -1; }
+  .score-tile-val { font-size: 2rem; }
+  .score-tile { padding: 0.6rem 0.75rem; }
+
+  /* Mid grid: single column stack */
+  .mid-grid {
+    grid-template-columns: 1fr;
+    overflow: visible;
+    flex: none;
+  }
+  .panel { overflow: visible; }
+
+  /* Donuts: side-by-side circle + legend, smaller */
+  .donut-wrap { gap: 12px; }
+  .donut-circle-wrap { flex: 0 0 50%; }
+  .donut-legend { font-size: 0.9rem; }
+
+  /* Leaderboard: single column */
+  .lb-body-grid {
+    grid-template-columns: 1fr;
+    overflow: visible;
+    flex: none;
+  }
+  .lb-title { font-size: 1.75rem; }
+  .lb-table td.lb-op  { font-size: 1.1rem; }
+  .lb-table td.lb-qsos { font-size: 1.25rem; }
+  .lb-table tbody tr:first-child td.lb-op   { font-size: 1.35rem; }
+  .lb-table tbody tr:first-child td.lb-qsos { font-size: 1.5rem; }
+
+  /* Footer: bigger tap targets */
+  .dash-footer { height: auto; padding: 0.5rem 1rem; flex-wrap: wrap; gap: 0.5rem; }
+  .view-btn { font-size: 0.85rem; padding: 6px 14px; }
+
+  /* Ticker: slightly smaller */
+  .qso-ticker { height: 38px; }
+  .ticker-item { font-size: 0.9rem; padding: 0 16px; }
+
+  /* Map view */
+  .map-view-body { min-height: 300px; }
+  #dash-map-wrap { min-height: 260px; }
+}
+
+/* ── Very small phones (≤ 400px) ─────────────────────────────────────── */
+@media (max-width: 400px) {
+  .hdr-stat { gap: 0; }
+  .hdr-stat-val { font-size: 1.1rem; }
+  .dash-header-right { gap: 0.5rem; }
+  .score-tile-val { font-size: 1.6rem; }
+}
