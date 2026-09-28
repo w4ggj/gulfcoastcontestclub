@@ -71,11 +71,18 @@ async def websocket_endpoint(ws: WebSocket):
         if contest:
             stats = db.get_live_stats(conn, contest["id"])
             score = db.get_latest_score(conn, contest["id"])
+            cs_row = conn.execute(
+                "SELECT SUM(points) as total_pts, SUM(is_mult1) as total_mults FROM contacts "
+                "WHERE contest_id=? AND deleted=0", (contest["id"],)
+            ).fetchone()
+            cs_pts   = cs_row["total_pts"]   or 0
+            cs_mults = cs_row["total_mults"] or 0
             await ws.send_text(json.dumps({
-                "type":    "snapshot",
-                "contest": dict(contest),
-                "stats":   stats,
-                "score":   dict(score) if score else None,
+                "type":           "snapshot",
+                "contest":        dict(contest),
+                "stats":          stats,
+                "score":          dict(score) if score else None,
+                "combined_score": {"total_points": cs_pts, "total_mults": cs_mults, "score": cs_pts * cs_mults},
             }))
         else:
             await ws.send_text(json.dumps({"type": "no_live_contest"}))
@@ -134,11 +141,24 @@ def get_contest(contest_id: int):
     if score and score.get("band_breakdown"):
         score["band_breakdown"] = json.loads(score["band_breakdown"])
     stations = db.get_station_configs(conn, contest_id)
+    # Combined score from all QSOs in DB (includes imported logs N1MM doesn't know about)
+    cs_row = conn.execute(
+        "SELECT SUM(points) as total_pts, SUM(is_mult1) as total_mults FROM contacts "
+        "WHERE contest_id=? AND deleted=0", (contest_id,)
+    ).fetchone()
+    combined_pts   = cs_row["total_pts"]   or 0
+    combined_mults = cs_row["total_mults"] or 0
+    combined_score = {
+        "total_points": combined_pts,
+        "total_mults":  combined_mults,
+        "score":        combined_pts * combined_mults,
+    }
     return {
-        "contest":  dict(c),
-        "stats":    stats,
-        "score":    score,
-        "stations": [dict(s) for s in stations],
+        "contest":        dict(c),
+        "stats":          stats,
+        "score":          score,
+        "combined_score": combined_score,
+        "stations":       [dict(s) for s in stations],
     }
 
 
