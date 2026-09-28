@@ -124,7 +124,7 @@ async function loadFromSupabase(sb) {
 
 function computeStatsFromContacts(contacts) {
   const byBand = {}, byOp = {}, byStation = {};
-  let total = 0;
+  let total = 0, totalPts = 0, totalMults = 0;
   const cutoff = new Date(Date.now() - 3600_000).toISOString();
 
   for (const c of contacts) {
@@ -133,6 +133,8 @@ function computeStatsFromContacts(contacts) {
     if (!byBand[band]) byBand[band] = { band, qsos: 0, pts: 0 };
     byBand[band].qsos++;
     byBand[band].pts += c.points || 0;
+    totalPts   += c.points  || 0;
+    totalMults += c.is_mult1 || 0;
 
     const op = c.operator || '?';
     if (!byOp[op]) byOp[op] = { operator: op, qsos: 0, bands_active: new Set() };
@@ -151,6 +153,8 @@ function computeStatsFromContacts(contacts) {
 
   return {
     total_qsos: total,
+    total_pts:  totalPts,
+    total_mults: totalMults,
     rate_1h,
     bands:     Object.values(byBand).sort((a,b) => a.band.localeCompare(b.band)),
     operators: Object.values(byOp).map(o => ({ ...o, bands_active: [...o.bands_active].join(',') }))
@@ -276,9 +280,15 @@ function renderStats() {
 
 function renderScore() {
   const sc = state.score;
-  const qsoScore = sc?.score ?? (sc?.total_points && sc?.total_mults ? sc.total_points * sc.total_mults : null);
-  const mults    = sc?.total_mults ?? sc?.mults  ?? null;
-  const pts      = sc?.total_points ?? sc?.points ?? null;
+  // Fall back to contacts-derived totals when no N1MM score snapshot exists
+  const fbPts   = state.stats?.total_pts   ?? null;
+  const fbMults = state.stats?.total_mults ?? null;
+  const qsoScore = sc?.score
+    ?? (sc?.total_points && sc?.total_mults ? sc.total_points * sc.total_mults : null)
+    ?? (fbPts != null && fbMults != null ? fbPts * fbMults : null)
+    ?? (fbPts != null ? fbPts : null);
+  const mults    = sc?.total_mults ?? sc?.mults  ?? fbMults ?? null;
+  const pts      = sc?.total_points ?? sc?.points ?? fbPts  ?? null;
   const qsos     = sc?.total_qsos  ?? sc?.qsos   ?? null;
   const bonus    = sc?.bonus_points ?? 0;
   const total    = qsoScore != null ? qsoScore + bonus : null;
