@@ -286,7 +286,6 @@ function renderScore() {
   const qsoScore = cs?.score ?? sc?.score ?? null;
   const mults    = sc?.total_mults ?? sc?.mults ?? null;
   const pts      = sc?.total_points ?? sc?.points ?? null;
-  const qsos     = sc?.total_qsos ?? sc?.qsos ?? null;
   const bonus    = sc?.bonus_points ?? 0;
   const total    = qsoScore != null ? qsoScore + bonus : null;
 
@@ -296,7 +295,7 @@ function renderScore() {
   setText('sr-bonus',   fmt(bonus));
   setText('sr-mults',   mults    != null ? fmt(mults)    : '—');
   setText('sr-points',  pts      != null ? fmt(pts)      : '—');
-  if (qsos != null) setText('sr-qsos', fmt(qsos));
+  // sr-qsos is set by renderStats() from state.stats.total_qsos (all operators)
 }
 
 function renderBands(bands) {
