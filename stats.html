@@ -351,10 +351,7 @@
 
 <script>
 // ── Configuration ────────────────────────────────────────────────────────────
-// Fill these in once your Supabase project is set up.
-// Use the anon/public key — it only has read access to contest data.
-const SUPABASE_URL      = 'https://otlajgozedjkstuekjvi.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im90bGFqZ296ZWRqa3N0dWVranZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0NzM0NjIsImV4cCI6MjA5OTA0OTQ2Mn0.WTrOEPtYKwuqIxOGgW17yBZ2BuuiSfzhdKCVWTBZOoI';
+const API_BASE = 'https://contest.tavaone.com';
 
 // ── Chart palette ─────────────────────────────────────────────────────────────
 const COLORS = [
@@ -367,55 +364,38 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const fmt = n => (n == null ? '—' : Number(n).toLocaleString());
 
-async function sbFetch(path, params = {}) {
-  const url = new URL(SUPABASE_URL + '/rest/v1/' + path);
-  Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
-  const res = await fetch(url.toString(), {
-    headers: {
-      'apikey': SUPABASE_ANON_KEY,
-      'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
-      'Accept': 'application/json',
-      'Prefer': 'count=exact',
-    }
-  });
-  if (!res.ok) throw new Error(`Supabase ${res.status}: ${await res.text()}`);
+async function apiFetch(path) {
+  const res = await fetch(API_BASE + path, { headers: { 'Accept': 'application/json' } });
+  if (!res.ok) throw new Error(`API ${res.status}: ${await res.text()}`);
   return res.json();
 }
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
 async function init() {
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    $('loading-msg').remove();
-    $('app-root').innerHTML = `
-      <div class="config-notice" style="margin: 3rem auto;">
-        <h2>Supabase not configured</h2>
-        <p>Open <strong>stats.html</strong> and set the two constants at the top of the script:</p>
-        <code>const SUPABASE_URL      = 'https://YOUR-PROJECT.supabase.co';
-const SUPABASE_ANON_KEY = 'your-anon-public-key';</code>
-        <p style="font-size:0.85rem; color:var(--text-muted); margin-top:0.75rem;">
-          Find both values in your Supabase project under<br>
-          <strong>Settings → API → Project URL &amp; anon key</strong>.<br>
-          The anon key is safe to embed — RLS limits it to read-only access.
-        </p>
-      </div>`;
-    return;
-  }
-
   try {
-    const contests = await sbFetch('contests', {
-      select: 'id,name,contest_type,year,status,started_at,completed_at,station_callsign',
-      order: 'started_at.desc',
+    const contests = await apiFetch('/api/contests');
+
+    // Sort newest first (by started_at or id)
+    contests.sort((a, b) => {
+      const ta = a.started_at || String(a.id);
+      const tb = b.started_at || String(b.id);
+      return tb.localeCompare(ta);
     });
 
-    if (!contests.length) {
-      $('loading-msg').textContent = 'No contests found in database yet.';
+    // Filter out draft contests with no QSOs (nothing to show)
+    const showable = contests.filter(c => c.status !== 'draft');
+
+    if (!showable.length) {
+      $('loading-msg').textContent = 'No completed or live contests found yet.';
       return;
     }
 
     $('loading-msg').remove();
     const sel = $('contest-select');
-    contests.forEach(c => {
-      const date = c.started_at ? new Date(c.started_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : c.year;
+    showable.forEach(c => {
+      const date = c.started_at
+        ? new Date(c.started_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+        : c.year;
       const opt = document.createElement('option');
       opt.value = c.id;
       opt.textContent = `${c.name} (${date})`;
@@ -426,27 +406,25 @@ const SUPABASE_ANON_KEY = 'your-anon-public-key';</code>
     $('contest-bar').style.display = 'flex';
 
     // Auto-load live contest or most recent
-    const live = contests.find(c => c.status === 'live') || contests[0];
-    sel.value = live.id;
-    await loadContest(live.id, live);
+    const preferred = showable.find(c => c.status === 'live') || showable[0];
+    sel.value = preferred.id;
+    await loadContest(preferred.id);
 
   } catch (e) {
-    $('loading-msg').innerHTML = `<div class="error-msg">Could not connect to Supabase: ${esc(e.message)}</div>`;
+    $('loading-msg').innerHTML = `<div class="error-msg">Could not connect to contest API: ${esc(e.message)}</div>`;
   }
 }
 
 // ── Load one contest ─────────────────────────────────────────────────────────
-async function loadContest(contestId, meta) {
+async function loadContest(contestId) {
   if (!contestId) return;
   const root = $('app-root');
   root.innerHTML = '<div class="loading" style="padding:3rem;">Loading contest data…</div>';
 
   try {
-    // Fetch contest meta if not passed
-    if (!meta) {
-      const rows = await sbFetch(`contests?id=eq.${contestId}&select=*`);
-      meta = rows[0];
-    }
+    // Fetch contest meta + score snapshot together
+    const detail = await apiFetch(`/api/contests/${contestId}`);
+    const meta = detail.contest;
 
     // Update status badge
     const badge = $('contest-status-badge');
@@ -458,27 +436,13 @@ async function loadContest(contestId, meta) {
       badge.innerHTML = '';
     }
 
-    // Fetch contacts (non-deleted)
-    const contacts = await sbFetch('contacts', {
-      select: 'operator,call,band,mode,points,qso_utc,station_name',
-      contest_id: `eq.${contestId}`,
-      deleted: 'eq.false',
-      order: 'qso_utc.asc',
-    });
+    // Fetch contacts
+    const contacts = await apiFetch(`/api/contests/${contestId}/contacts`);
 
-    // Fetch latest score snapshot
-    let snapshot = null;
-    try {
-      const snaps = await sbFetch('score_snapshots', {
-        select: '*',
-        contest_id: `eq.${contestId}`,
-        order: 'snapshot_utc.desc',
-        limit: 1,
-      });
-      snapshot = snaps[0] || null;
-    } catch (_) {}
+    const snapshot  = detail.score || null;
+    const combined  = detail.combined_score || null;
 
-    renderContestStats(root, meta, contacts, snapshot);
+    renderContestStats(root, meta, contacts, snapshot, combined);
 
   } catch (e) {
     root.innerHTML = `<div class="error-msg" style="margin:2rem 0;">Error loading contest: ${esc(e.message)}</div>`;
@@ -486,23 +450,25 @@ async function loadContest(contestId, meta) {
 }
 
 // ── Render ───────────────────────────────────────────────────────────────────
-function renderContestStats(root, meta, contacts, snapshot) {
+function renderContestStats(root, meta, contacts, snapshot, combined) {
   const total = contacts.length;
 
-  // Band breakdown
+  // Band breakdown — normalise to lowercase for display consistency
   const bandMap = {};
   contacts.forEach(c => {
     if (!c.band) return;
-    bandMap[c.band] = (bandMap[c.band] || 0) + 1;
+    const b = c.band.toLowerCase();
+    bandMap[b] = (bandMap[b] || 0) + 1;
   });
   const bands = Object.entries(bandMap).sort((a,b) => b[1]-a[1]);
   const maxBand = bands[0]?.[1] || 1;
 
-  // Mode breakdown
+  // Mode breakdown — normalise to uppercase
   const modeMap = {};
   contacts.forEach(c => {
     if (!c.mode) return;
-    modeMap[c.mode] = (modeMap[c.mode] || 0) + 1;
+    const m = c.mode.toUpperCase();
+    modeMap[m] = (modeMap[m] || 0) + 1;
   });
   const modes = Object.entries(modeMap).sort((a,b) => b[1]-a[1]);
 
@@ -513,7 +479,7 @@ function renderContestStats(root, meta, contacts, snapshot) {
     const op = c.operator || '?';
     opMap[op] = (opMap[op] || 0) + 1;
     if (!opBandMap[op]) opBandMap[op] = new Set();
-    if (c.band) opBandMap[op].add(c.band);
+    if (c.band) opBandMap[op].add(c.band.toLowerCase());
   });
   const operators = Object.entries(opMap).sort((a,b) => b[1]-a[1]);
 
@@ -530,8 +496,8 @@ function renderContestStats(root, meta, contacts, snapshot) {
   // Recent QSOs (last 15)
   const recent = [...contacts].reverse().slice(0, 15);
 
-  // Score from snapshot or derive from contacts
-  const score  = snapshot?.score ?? null;
+  // Score — prefer combined_score (N1MM + imported Cabrillo), fall back to snapshot
+  const score  = combined?.score ?? snapshot?.score ?? null;
   const mults  = snapshot?.total_mults ?? null;
   const points = snapshot?.total_points ?? contacts.reduce((s,c) => s + (c.points||0), 0);
   const bonus  = snapshot?.bonus_points ?? 0;
@@ -722,7 +688,7 @@ function renderContestStats(root, meta, contacts, snapshot) {
 
   // Auto-refresh if live
   if (meta.status === 'live') {
-    setTimeout(() => loadContest(meta.id, null), 60000);
+    setTimeout(() => loadContest(meta.id), 60000);
   }
 }
 
