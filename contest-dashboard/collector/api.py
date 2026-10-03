@@ -19,6 +19,7 @@ from datetime import datetime, timezone
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, UploadFile, File
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 import db
@@ -28,6 +29,13 @@ from config import DEFAULT_ROTATION_SECONDS
 log = logging.getLogger(__name__)
 
 app = FastAPI(title="GCCC Contest Dashboard", docs_url="/api/docs")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["GET"],
+    allow_headers=["*"],
+)
 
 # Shared connection — set in main.py before serving
 _conn = None
