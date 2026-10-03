@@ -57,8 +57,8 @@ class UDPListener(asyncio.DatagramProtocol):
 
         # Contest binding (§4): only process if a contest is live
         contest = db.get_live_contest(conn)
-        if contest is None:
-            log.debug("No live contest — quarantining %s packet", ptype)
+        if contest is None or contest["status"] != "live":
+            log.debug("No live contest — dropping %s packet", ptype)
             return
 
         contest_id = contest["id"]
