@@ -501,7 +501,9 @@ function renderContestStats(root, meta, contacts, snapshot, combined) {
   const mults  = snapshot?.total_mults ?? null;
   const points = snapshot?.total_points ?? contacts.reduce((s,c) => s + (c.points||0), 0);
   const bonus  = snapshot?.bonus_points ?? 0;
-  const bonusBreakdown = snapshot?.bonus_breakdown ?? null;
+  const _bb = snapshot?.bonus_breakdown ?? null;
+  const bonusBreakdown = Array.isArray(_bb) ? _bb
+    : (typeof _bb === 'string' ? (() => { try { return JSON.parse(_bb); } catch(_){return null;} })() : null);
   const totalScore = score != null ? score + bonus : null;
 
   // Rate — QSOs in last 60 min
