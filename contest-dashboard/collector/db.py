@@ -129,6 +129,15 @@ CREATE INDEX IF NOT EXISTS idx_contacts_operator ON contacts(contest_id, operato
 CREATE INDEX IF NOT EXISTS idx_contacts_time ON contacts(contest_id, qso_utc);
 CREATE INDEX IF NOT EXISTS idx_contacts_station ON contacts(contest_id, station_name);
 CREATE INDEX IF NOT EXISTS idx_score_contest ON score_snapshots(contest_id, snapshot_utc);
+
+CREATE TABLE IF NOT EXISTS imported_log_scores (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    contest_id    INTEGER NOT NULL REFERENCES contests(id),
+    operator      TEXT NOT NULL,
+    claimed_score INTEGER NOT NULL,
+    imported_at   TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
+    UNIQUE(contest_id, operator)
+);
 """
 
 
@@ -251,8 +260,8 @@ def get_live_stats(conn: sqlite3.Connection, contest_id: int) -> dict:
     total = conn.execute(f"SELECT COUNT(*) as n {base}", (contest_id,)).fetchone()["n"]
 
     bands = conn.execute(f"""
-        SELECT band, COUNT(*) as qsos, SUM(points) as pts
-        {base} GROUP BY band ORDER BY band
+        SELECT UPPER(band) as band, COUNT(*) as qsos, SUM(points) as pts
+        {base} GROUP BY UPPER(band) ORDER BY UPPER(band)
     """, (contest_id,)).fetchall()
 
     operators = conn.execute(f"""
@@ -263,12 +272,12 @@ def get_live_stats(conn: sqlite3.Connection, contest_id: int) -> dict:
     """, (contest_id,)).fetchall()
 
     stations = conn.execute(f"""
-        SELECT station_name, radio_nr, COUNT(*) as qsos,
+        SELECT operator as station_name, NULL as radio_nr, COUNT(*) as qsos,
                MAX(qso_utc) as last_qso,
                MAX(band) as last_band,
                MAX(mode) as last_mode
-        {base} AND station_name IS NOT NULL
-        GROUP BY station_name, radio_nr ORDER BY station_name, radio_nr
+        {base} AND operator IS NOT NULL
+        GROUP BY operator ORDER BY qsos DESC
     """, (contest_id,)).fetchall()
 
     # Per-operator per-band

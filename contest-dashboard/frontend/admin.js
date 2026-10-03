@@ -22,6 +22,27 @@ async function loadContests() {
   sel.innerHTML = '<option value="">— select —</option>' +
     contests.map(c => `<option value="${c.id}">${esc(c.name)} (${c.year})</option>`).join('');
 
+  // Populate import-log contest selector
+  const impSel = el('imp-contest');
+  if (impSel) {
+    impSel.innerHTML = '<option value="">— select —</option>' +
+      contests.map(c => `<option value="${c.id}">${esc(c.name)} (${c.year})</option>`).join('');
+    impSel.onchange = () => {
+      const id = impSel.value;
+      const adifLink = el('imp-adif-link');
+      const cabLink  = el('imp-cab-link');
+      if (id) {
+        adifLink.href = `/api/contests/${id}/import_adif`;
+        adifLink.style.pointerEvents = ''; adifLink.style.opacity = '';
+        cabLink.href  = `/api/contests/${id}/import_adif`;  // same page, both formats
+        cabLink.style.pointerEvents = ''; cabLink.style.opacity = '';
+      } else {
+        adifLink.href = '#'; adifLink.style.pointerEvents = 'none'; adifLink.style.opacity = '0.5';
+        cabLink.href  = '#'; cabLink.style.pointerEvents = 'none';  cabLink.style.opacity = '0.5';
+      }
+    };
+  }
+
   // Live banner
   const live = contests.find(c => c.status === 'live');
   if (live) {

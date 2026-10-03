@@ -124,15 +124,17 @@ async function loadFromSupabase(sb) {
 
 function computeStatsFromContacts(contacts) {
   const byBand = {}, byOp = {}, byStation = {};
-  let total = 0;
+  let total = 0, totalPts = 0, totalMults = 0;
   const cutoff = new Date(Date.now() - 3600_000).toISOString();
 
   for (const c of contacts) {
     total++;
-    const band = c.band || '?';
+    const band = (c.band || '?').toUpperCase();
     if (!byBand[band]) byBand[band] = { band, qsos: 0, pts: 0 };
     byBand[band].qsos++;
     byBand[band].pts += c.points || 0;
+    totalPts   += c.points  || 0;
+    totalMults += c.is_mult1 || 0;
 
     const op = c.operator || '?';
     if (!byOp[op]) byOp[op] = { operator: op, qsos: 0, bands_active: new Set() };
@@ -151,6 +153,8 @@ function computeStatsFromContacts(contacts) {
 
   return {
     total_qsos: total,
+    total_pts:  totalPts,
+    total_mults: totalMults,
     rate_1h,
     bands:     Object.values(byBand).sort((a,b) => a.band.localeCompare(b.band)),
     operators: Object.values(byOp).map(o => ({ ...o, bands_active: [...o.bands_active].join(',') }))
@@ -164,9 +168,10 @@ function computeStatsFromContacts(contacts) {
 function handleMessage(msg) {
   switch (msg.type) {
     case 'snapshot':
-      state.contest = msg.contest;
-      state.stats   = msg.stats;
-      state.score   = msg.score;
+      state.contest       = msg.contest;
+      state.stats         = msg.stats;
+      state.score         = msg.score;
+      state.combinedScore = msg.combined_score ?? null;
       if (state.contest) { showDashboard(); renderAll(); startRotation(); }
       else                { showIdle(); }
       break;
@@ -174,6 +179,7 @@ function handleMessage(msg) {
     case 'stats_update':
       state.stats = msg.stats;
       renderStats();
+      if (state.contest) loadAndRenderDashMap();
       break;
 
     case 'score_update':
@@ -208,21 +214,26 @@ function showDashboard() {
 function setView(name) {
   currentView = name;
   document.querySelectorAll('.dash-view').forEach(el => {
-    el.classList.toggle('active', el.id === `view-${name}`);
-    el.classList.toggle('hidden', el.id !== `view-${name}`);
+    const active = el.id === `view-${name}`;
+    el.classList.toggle('active', active);
+    el.classList.toggle('hidden', !active);
   });
   document.querySelectorAll('.view-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.view === name);
   });
+  if (name === 'map' && state.contest) loadAndRenderDashMap();
   resetRotationTimer();
 }
 
 window.setView = setView;  // expose for onclick
 
+const ROTATION_VIEWS = ['warroom', 'leaderboard', 'map'];
+
 function startRotation() {
   stopRotation();
   rotationTimer = setInterval(() => {
-    setView(currentView === 'warroom' ? 'leaderboard' : 'warroom');
+    const idx = ROTATION_VIEWS.indexOf(currentView);
+    setView(ROTATION_VIEWS[(idx + 1) % ROTATION_VIEWS.length]);
   }, rotationMs);
 }
 
@@ -269,11 +280,12 @@ function renderStats() {
 }
 
 function renderScore() {
-  const sc = state.score;
-  const qsoScore = sc?.score ?? (sc?.total_points && sc?.total_mults ? sc.total_points * sc.total_mults : null);
-  const mults    = sc?.total_mults ?? sc?.mults  ?? null;
+  const sc  = state.score;          // N1MM live snapshot (single-station)
+  const cs  = state.combinedScore;  // N1MM + claimed scores from imports
+  // Use combined score (N1MM + all imported Cabrillo claimed scores)
+  const qsoScore = cs?.score ?? sc?.score ?? null;
+  const mults    = sc?.total_mults ?? sc?.mults ?? null;
   const pts      = sc?.total_points ?? sc?.points ?? null;
-  const qsos     = sc?.total_qsos  ?? sc?.qsos   ?? null;
   const bonus    = sc?.bonus_points ?? 0;
   const total    = qsoScore != null ? qsoScore + bonus : null;
 
@@ -283,7 +295,7 @@ function renderScore() {
   setText('sr-bonus',   fmt(bonus));
   setText('sr-mults',   mults    != null ? fmt(mults)    : '—');
   setText('sr-points',  pts      != null ? fmt(pts)      : '—');
-  if (qsos != null) setText('sr-qsos', fmt(qsos));
+  // sr-qsos is set by renderStats() from state.stats.total_qsos (all operators)
 }
 
 function renderBands(bands) {
@@ -464,4 +476,289 @@ function updateClock() {
   const now = new Date();
   const utc = now.toUTCString().match(/(\d{2}:\d{2})/);
   setText('hdr-time', utc ? utc[1] : '--:--');
+}
+
+// ── Contact Map ─────────────────────────────────────────────────────────────
+
+const HOME_LAT = 27.81, HOME_LON = -82.71;
+
+const BAND_COLORS = {
+  '160m':'#9b59b6','80m':'#e67e22','40m':'#e8c040',
+  '20m':'#4ab87a','15m':'#4a9edd','10m':'#e05050',
+  '6m':'#1abc9c','2m':'#c0392b',
+};
+const BAND_ORDER = ['160m','80m','40m','20m','15m','10m','6m','2m'];
+
+const PREFIX_COORDS = {
+  'W1':[43.5,-72],'K1':[43.5,-72],'N1':[43.5,-72],
+  'W2':[40.7,-74],'K2':[40.7,-74],'N2':[40.7,-74],
+  'W3':[39.9,-76],'K3':[39.9,-76],'N3':[39.9,-76],
+  'W4':[33,-84],'K4':[33,-84],'N4':[33,-84],
+  'W5':[31,-98],'K5':[31,-98],'N5':[31,-98],
+  'W6':[37,-120],'K6':[37,-120],'N6':[37,-120],
+  'W7':[45,-114],'K7':[45,-114],'N7':[45,-114],
+  'W8':[42,-83],'K8':[42,-83],'N8':[42,-83],
+  'W9':[41.5,-87.6],'K9':[41.5,-87.6],'N9':[41.5,-87.6],
+  'W0':[39,-95],'K0':[39,-95],'N0':[39,-95],
+  'KL7':[64,-153],'AL7':[64,-153],'NL7':[64,-153],'WL7':[64,-153],
+  'KH6':[20.5,-157],'AH6':[20.5,-157],'NH6':[20.5,-157],'WH6':[20.5,-157],
+  'KH2':[13.5,144.8],'KH0':[15.2,145.8],'KH8':[-14.3,-170.7],
+  'KP4':[18.2,-66.5],'KP2':[17.7,-64.8],
+  'VE1':[45.5,-63],'VA1':[45.5,-63],'VE2':[48,-72],'VA2':[48,-72],
+  'VE3':[44,-80],'VA3':[44,-80],'VE4':[50,-97],'VE5':[52,-106],
+  'VE6':[53,-114],'VA6':[53,-114],'VE7':[50,-123],'VA7':[50,-123],
+  'VE8':[62,-110],'VE9':[46.5,-66.5],'VY1':[63,-136],'VY2':[46.2,-63.1],
+  'XE':[23,-102],'TI':[9.9,-84.1],'HP':[9,-80],'TG':[15.5,-90.3],
+  'HQ':[15,-86.5],'YS':[13.7,-89.1],
+  'CO':[22,-79.5],'CM':[22,-79.5],'HI':[18.8,-70.2],'HH':[18.9,-72.3],
+  'VP9':[32.3,-64.8],'ZF':[19.3,-81.4],'8P':[13.2,-59.6],
+  'J3':[12,-61.7],'J7':[15.3,-61.4],'J8':[13.2,-61.2],'J6':[13.9,-61],
+  '6Y':[18.1,-77.3],
+  'NP2':[17.7,-64.8],'NP3':[18.2,-66.5],'NP4':[18.2,-66.5],
+  'VP2E':[18.2,-63.1],'VP2M':[16.7,-62.2],'VP2V':[18.4,-64.6],'VP5':[21.5,-71.5],
+  'P4':[12.5,-70],'PJ2':[12.1,-69],'PJ4':[12.2,-68.3],
+  'V4':[17.3,-62.7],'V3':[17,-88.5],
+  'C3':[42.5,1.5],
+  'P3':[35,33.2],
+  'CR3':[32.7,-16.9],
+  'PY':[-15,-53],'PP':[-10,-53],'PQ':[-15,-53],'PR':[-15,-53],'PS':[-15,-53],'PT':[-15,-53],'PU':[-15,-53],'PV':[-15,-53],'PW':[-15,-53],'PX':[-15,-53],
+  'LU':[-34,-64],'LS':[-34,-64],'LT':[-34,-64],'LV':[-34,-64],'LW':[-34,-64],
+  'CE':[-33,-71],'OA':[-12,-77],'HC':[-2,-78],
+  'HK':[4,-74],'YV':[8,-66],'4M':[8,-66],'ZP':[-23,-58],'CX':[-34,-56],'CP':[-17,-65],
+  'FY':[4,-53],
+  'G':[52,-1],'M':[52,-1],'GX':[52,-1],'2E':[52,-1],
+  'GI':[54.6,-6.3],'MI':[54.6,-6.3],'GW':[52.1,-3.7],'MW':[52.1,-3.7],
+  'GM':[57,-4],'MM':[57,-4],
+  'GD':[54.2,-4.5],'GJ':[49.2,-2.1],'GU':[49.5,-2.6],
+  'EI':[53.1,-8],
+  'CT':[39.4,-8.2],'CR':[39.4,-8.2],
+  '3A':[43.7,7.4],
+  'T7':[43.9,12.4],
+  'ZB':[36.1,-5.4],
+  'DL':[51,10],'DM':[51,10],'DN':[51,10],'DP':[51,10],'DQ':[51,10],'DR':[51,10],
+  'DA':[51,10],'DB':[51,10],'DC':[51,10],'DD':[51,10],'DE':[51,10],'DF':[51,10],
+  'DG':[51,10],'DH':[51,10],'DI':[51,10],'DJ':[51,10],'DK':[51,10],
+  'F':[46.6,2.3],
+  'I':[42.8,12.6],
+  'EA':[40.4,-3.7],'EB':[40.4,-3.7],'EC':[40.4,-3.7],'ED':[40.4,-3.7],
+  'EE':[40.4,-3.7],'EF':[40.4,-3.7],'EG':[40.4,-3.7],'EH':[40.4,-3.7],
+  'PA':[52.1,5.3],'PD':[52.1,5.3],'PE':[52.1,5.3],'PH':[52.1,5.3],
+  'PI':[52.1,5.3],
+  'SM':[60,15],'SA':[60,15],'SB':[60,15],'SC':[60,15],'SD':[60,15],'SE':[60,15],
+  'SF':[60,15],'SG':[60,15],'SH':[60,15],'SI':[60,15],'SJ':[60,15],'SK':[60,15],'SL':[60,15],
+  'OH':[64,25],'OG':[64,25],'OF':[64,25],'OI':[64,25],'OJ':[64,25],
+  'OY':[62,-6.9],
+  'TF':[64.9,-18.1],
+  'LA':[60,9],'LB':[60,9],'LC':[60,9],
+  'OZ':[56,10],'OV':[56,10],'OW':[56,10],'OU':[56,10],'OX':[71.7,-42.6],
+  'SP':[52,20],'SN':[52,20],'SO':[52,20],'SQ':[52,20],'SR':[52,20],
+  'HF':[52,20],
+  'OK':[50.1,14.4],'OL':[50.1,14.4],
+  'OM':[48.7,19.7],
+  'HA':[47,19],'HG':[47,19],
+  'YO':[45.9,24.9],'YP':[45.9,24.9],'YQ':[45.9,24.9],'YR':[45.9,24.9],
+  'LZ':[42.7,25.5],
+  'SV':[37.9,23.7],'SX':[37.9,23.7],'J4':[37.9,23.7],
+  'SV5':[36.4,28.2],'SV9':[35.3,25.1],
+  'OE':[48.2,16.4],
+  'HB9':[47,8.3],'HB0':[47.1,9.5],
+  'ON':[50.5,4.5],'OO':[50.5,4.5],'OP':[50.5,4.5],'OR':[50.5,4.5],'OS':[50.5,4.5],
+  'LX':[49.8,6.1],
+  'TK':[42,9],'IS':[40,9],
+  'IT9':[37.5,14],
+  'YU':[44.8,20.5],'YT':[44.8,20.5],
+  'S5':[46,15],'E7':[43.8,17.5],'9A':[45.1,15.2],
+  'Z3':[41.6,21.7],'ZA':[41.3,19.8],'4O':[42.4,19.3],'Z6':[42.7,21.2],
+  'YL':[56.9,24.1],'LY':[54.7,25.3],'ES':[59.4,24.8],
+  'TA':[39,35],'TC':[39,35],
+  'OD':[33.9,35.5],'4X':[31.8,34.8],'4Z':[31.8,34.8],
+  '5B':[35,33.2],
+  'UR':[49,31],'US':[49,31],'UT':[49,31],'UU':[49,31],'UV':[49,31],
+  'UW':[49,31],'UX':[49,31],'UY':[49,31],'UZ':[49,31],
+  'EM':[49,31],'EN':[49,31],'EO':[49,31],
+  'EW':[53.9,27.6],'EU':[54,28],
+  'UA9':[56,60],'UA0':[55,95],
+  'UA':[55.8,37.6],'RA':[55.8,37.6],'RB':[55.8,37.6],'RC':[55.8,37.6],
+  'RD':[55.8,37.6],'RE':[55.8,37.6],'RF':[55.8,37.6],'RG':[55.8,37.6],
+  'RH':[55.8,37.6],'RI':[55.8,37.6],'RJ':[55.8,37.6],'RK':[55.8,37.6],
+  'RL':[55.8,37.6],'RM':[55.8,37.6],'RN':[55.8,37.6],'RO':[55.8,37.6],
+  'RP':[55.8,37.6],'RQ':[55.8,37.6],'RS':[55.8,37.6],'RT':[55.8,37.6],
+  'RU':[55.8,37.6],'RV':[55.8,37.6],'RW':[55.8,37.6],'RX':[55.8,37.6],
+  'RY':[55.8,37.6],'RZ':[55.8,37.6],
+  '4L':[41.7,44.8],'EK':[40.2,44.5],'4J':[40.4,49.9],'4K':[40.4,49.9],
+  'EP':[32.5,54],'EQ':[32.5,54],
+  'A4':[23.6,58.6],'A7':[25.3,51.2],'A6':[24.5,54.4],
+  '9K':[29.4,47.6],'YI':[33.3,44.4],'HZ':[24,45],'7Z':[24,45],
+  'JY':[31.9,35.9],'YK':[34.8,38.9],
+  'UN':[48,67],'UK':[41,65],'EY':[39,71],
+  'ZS':[-29,25],'ZR':[-29,25],'ZT':[-29,25],'ZU':[-29,25],
+  'EA8':[28.1,-15.4],'CT3':[32.7,-16.9],
+  'SU':[26.8,30.8],'CN':[33.8,-7],'7X':[28.2,2.6],
+  'TS':[33.9,9.6],'5A':[32.9,13.2],
+  'ST':[15.5,32.5],'SS':[15.5,32.5],
+  '5Z':[-1.3,36.8],'9L':[8.5,-13.2],'9G':[7.9,-1.2],'5N':[9.1,8.7],
+  'EL':[6.4,-9.4],'TU':[5.4,-4],
+  'ZD8':[-7.9,-14.4],'ZD7':[-15.9,-5.7],
+  'D2':[-11.2,17.9],'9J':[-13.1,27.9],'Z2':[-20,30],
+  'V5':[-22.6,17.1],'A2':[-22,24.7],'C9':[-18.7,35.5],
+  '5R':[-18.9,47.5],'VQ9':[-7.3,72.4],
+  'JA':[36,138],'JB':[36,138],'JE':[36,138],'JF':[36,138],'JG':[36,138],
+  'JH':[36,138],'JI':[36,138],'JJ':[36,138],'JK':[36,138],'JL':[36,138],
+  'JM':[36,138],'JN':[36,138],'JO':[36,138],'JP':[36,138],'JQ':[36,138],
+  'JR':[36,138],'JS':[36,138],'JD':[24,141],
+  '7J':[36,138],'7K':[36,138],'7L':[36,138],'7M':[36,138],'7N':[36,138],
+  '8J':[36,138],'8K':[36,138],'8L':[36,138],'8M':[36,138],'8N':[36,138],
+  'HL':[37.6,127],'DS':[37.6,127],'DT':[37.6,127],
+  'BY':[35,105],'BA':[35,105],'BD':[35,105],'BG':[35,105],'BH':[35,105],
+  'BI':[35,105],'BJ':[35,105],'BL':[35,105],'BT':[35,105],
+  'BV':[25,121],'BU':[25,121],'BW':[25,121],'BX':[25,121],
+  'VU':[20.5,78.9],'AT':[20.5,78.9],'AU':[20.5,78.9],
+  'AP':[30.4,69.3],'4S':[7.9,80.7],
+  'S2':[23.7,90.4],'S3':[23.7,90.4],
+  '9N':[28,84.1],'A5':[27.5,90.4],
+  'XV':[16,108],'XU':[11.6,104.9],'XW':[17.9,102.6],
+  'HS':[15.9,100.6],'XZ':[20,96],
+  '9M2':[3.1,101.7],'9M6':[5.4,115.2],'9W':[3,113],
+  'YB':[-6,106.8],'YC':[-6,106.8],'YD':[-6,106.8],
+  'DU':[12.9,121.7],'DV':[12.9,121.7],'DW':[12.9,121.7],'DX':[12.9,121.7],
+  '9V':[1.4,103.8],'VR':[22.3,114.2],
+  'VK':[-25,133],'VL':[-25,133],'ZL':[-41.3,174.8],
+  'YJ':[-17.7,168.3],'FO':[-17.5,-149.6],
+  'T8':[7,134],'V6':[6.9,158.2],
+  'CU':[38.5,-28.6],'EA9':[35.9,-5.4],
+  'VP8':[-51.7,-57.9],
+  '9H':[35.9,14.5],
+};
+
+function lookupCallsign(call) {
+  if (!call) return null;
+  call = call.toUpperCase().replace(/\/\S+$/, '').trim();
+  for (let l = Math.min(4, call.length); l >= 1; l--) {
+    const c = PREFIX_COORDS[call.slice(0, l)];
+    if (c) return c;
+  }
+  // US callsigns with 2-letter prefixes (KA-KZ, WA-WZ, NA-NZ, AA-AZ):
+  // extract the district digit and map to the corresponding call area
+  if (/^[KWNA][A-Z]/.test(call)) {
+    const m = call.match(/^[A-Z]+(\d)/);
+    if (m) return PREFIX_COORDS['W' + m[1]] || null;
+  }
+  return null;
+}
+
+let _worldCache = null;
+async function getWorld() {
+  if (_worldCache) return _worldCache;
+  _worldCache = await fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json').then(r => r.json());
+  return _worldCache;
+}
+
+async function loadAndRenderDashMap() {
+  const contestId = state.contest?.id;
+  if (!contestId) return;
+
+  let contacts;
+  try {
+    contacts = await fetch(`/api/contests/${contestId}/contacts`).then(r => r.json());
+  } catch(e) {
+    return;
+  }
+
+  const total = contacts.length;
+  const sub = document.getElementById('map-view-sub');
+  if (sub) sub.textContent = `${total.toLocaleString()} QSO${total !== 1 ? 's' : ''}`;
+
+  const container = document.getElementById('dash-map-wrap');
+  const legendEl  = document.getElementById('dash-map-legend');
+  await renderDashMap(container, contacts, legendEl);
+}
+
+async function renderDashMap(container, contacts, legendEl) {
+  if (!container) return;
+  container.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--dash-text-sub);font-size:0.9rem;">Loading map…</div>';
+
+  let world;
+  try { world = await getWorld(); }
+  catch(e) {
+    container.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--dash-text-sub);">Map unavailable (no network)</div>';
+    return;
+  }
+
+  container.innerHTML = '';
+  const W = container.clientWidth  || 900;
+  const H = container.clientHeight || Math.round(W * 0.5);
+
+  const svg = d3.select(container).append('svg')
+    .attr('viewBox', `0 0 ${W} ${H}`)
+    .attr('width', '100%').attr('height', '100%');
+
+  const proj = d3.geoNaturalEarth1().scale(W / 6.3).translate([W / 2, H / 2]);
+  const path = d3.geoPath().projection(proj);
+
+  // Dark ocean background
+  svg.append('rect').attr('width', W).attr('height', H).attr('fill', '#071620');
+
+  // Land (dark forest green)
+  const land = topojson.feature(world, world.objects.countries);
+  svg.append('g').selectAll('path').data(land.features).join('path')
+    .attr('d', path).attr('fill', '#1a3825').attr('stroke', '#2a5535').attr('stroke-width', 0.4);
+
+  // Graticule
+  svg.append('path').datum(d3.geoGraticule()())
+    .attr('d', path).attr('fill', 'none')
+    .attr('stroke', 'rgba(255,255,255,0.07)').attr('stroke-width', 0.3);
+
+  // Build unique entity map
+  const entities = {};
+  contacts.forEach(c => {
+    if (!c.call) return;
+    const coords = lookupCallsign(c.call);
+    if (!coords) return;
+    const band = c.band || '20m';
+    const key  = c.call.slice(0, 4) + '|' + band;
+    if (!entities[key]) entities[key] = { call: c.call, coords, band, count: 0 };
+    entities[key].count++;
+  });
+
+  const gLines = svg.append('g');
+  const gDots  = svg.append('g');
+  const bandsUsed = new Set();
+
+  Object.values(entities).forEach(({ call, coords, band, count }) => {
+    const [lat, lon] = coords;
+    const destPt = proj([lon, lat]);
+    if (!destPt) return;
+    const color = BAND_COLORS[band] || '#2d8a58';
+    bandsUsed.add(band);
+
+    gLines.append('path')
+      .datum({ type: 'Feature', geometry: { type: 'LineString',
+        coordinates: [[HOME_LON, HOME_LAT], [lon, lat]] }})
+      .attr('d', path).attr('fill', 'none')
+      .attr('stroke', color).attr('stroke-width', 1.2).attr('stroke-opacity', 0.5);
+
+    gDots.append('circle')
+      .attr('cx', destPt[0]).attr('cy', destPt[1]).attr('r', 4)
+      .attr('fill', color).attr('stroke', 'rgba(0,0,0,0.6)').attr('stroke-width', 0.8)
+      .append('title').text(`${call} · ${band} · ${count} QSO${count > 1 ? 's' : ''}`);
+  });
+
+  // Home station marker
+  const homePt = proj([HOME_LON, HOME_LAT]);
+  if (homePt) {
+    svg.append('circle').attr('cx', homePt[0]).attr('cy', homePt[1]).attr('r', 7)
+      .attr('fill', '#c0392b').attr('stroke', '#fff').attr('stroke-width', 1.5);
+    svg.append('circle').attr('cx', homePt[0]).attr('cy', homePt[1]).attr('r', 3)
+      .attr('fill', '#fff');
+  }
+
+  if (legendEl) {
+    legendEl.innerHTML = BAND_ORDER
+      .filter(b => bandsUsed.has(b))
+      .map(b => `<span class="dash-map-legend-item"><span class="dash-map-legend-dot" style="background:${BAND_COLORS[b]}"></span>${b}</span>`)
+      .join('') +
+      `<span class="dash-map-legend-item" style="margin-left:auto;">
+        <span class="dash-map-legend-dot" style="background:#c0392b;border:1.5px solid #fff;box-sizing:border-box;"></span>Home (W4GGJ)
+      </span>`;
+  }
 }
