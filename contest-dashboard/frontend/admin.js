@@ -112,10 +112,22 @@ async function loadContests() {
     if (c.status !== 'live') {
       actions.push(`<button class="btn btn-danger btn-sm" onclick="deleteContest(${c.id}, '${esc(c.name).replace(/'/g, "\\'")}')">Delete</button>`);
     }
+    // Format start/end times for display
+    let timeLine = '';
+    if (c.start_utc) {
+      const s = new Date(c.start_utc.endsWith('Z') ? c.start_utc : c.start_utc + 'Z');
+      const fmt = d => d.toLocaleDateString('en-US', {month:'short', day:'numeric'}) + ' ' +
+                        d.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'});
+      timeLine = fmt(s);
+      if (c.end_utc) {
+        const e = new Date(c.end_utc.endsWith('Z') ? c.end_utc : c.end_utc + 'Z');
+        timeLine += ' – ' + fmt(e);
+      }
+    }
     return `<div class="contest-item">
       <div class="contest-item-info">
         <span class="contest-item-name">${esc(c.name)}</span>
-        <span class="contest-item-meta">${c.year} · ${esc(c.location || '')} · ${esc(c.station_callsign || '')} · ${esc(c.category || '')}</span>
+        <span class="contest-item-meta">${c.year} · ${esc(c.location || '')} · ${esc(c.station_callsign || '')} · ${esc(c.category || '')}${timeLine ? ' · ' + timeLine : ''}</span>
       </div>
       <div class="contest-item-actions">
         <span class="status-badge status-${c.status}">${c.status}</span>
