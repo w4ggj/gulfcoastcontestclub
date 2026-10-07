@@ -146,7 +146,7 @@
         <li>In N1MM go to <strong>Config → Configure Ports → Broadcast Data</strong></li>
         <li>Check <strong>Contacts</strong> and <strong>Score</strong></li>
         <li>Set the IP address to <strong>your router's public IP : 12060</strong></li>
-        <li>On your router, port-forward <strong>UDP 12060 → 192.168.4.187</strong></li>
+        <li>On your router, port-forward <strong>UDP 12060 → 192.168.4.71</strong></li>
         <li>Make sure the contest is set to <strong>Live</strong> in this admin panel before operators start logging</li>
         <li>Each operator's PC NetBIOS name will appear as a separate station on the dashboard — add them in Station Setup above</li>
       </ol>
@@ -154,26 +154,46 @@
     </div>
   </section>
 
-  <!-- ── Import Log ───────────────────────────────────────────────── -->
-  <section class="admin-section">
-    <h2 class="admin-section-title">Import Log</h2>
-    <p class="admin-hint">Import a completed or in-progress log from another operator. Supports ADIF (.adi / .adif) and Cabrillo (.log / .cbr). Existing QSOs are matched by ID and updated, not duplicated.</p>
-    <div class="admin-card">
-      <h3 class="card-title">Select Contest &amp; Upload</h3>
+  <!-- ── Edit contest modal ────────────────────────────────────────── -->
+  <div id="edit-modal" class="edit-modal hidden">
+    <div class="edit-modal-card">
+      <h3 class="card-title">Edit Contest</h3>
+      <input type="hidden" id="edit-id">
       <div class="form-grid">
-        <label class="form-label">Contest
-          <select id="imp-contest" class="form-input">
-            <option value="">— select —</option>
-          </select>
+        <label class="form-label">Contest Name
+          <input id="e-name" class="form-input" type="text">
+        </label>
+        <label class="form-label">Contest Type
+          <input id="e-type" class="form-input" type="text">
+        </label>
+        <label class="form-label">Year
+          <input id="e-year" class="form-input" type="number">
+        </label>
+        <label class="form-label">Location / Site
+          <input id="e-location" class="form-input" type="text">
+        </label>
+        <label class="form-label">Station Callsign
+          <input id="e-callsign" class="form-input" type="text">
+        </label>
+        <label class="form-label">Category
+          <input id="e-category" class="form-input" type="text">
+        </label>
+        <label class="form-label">Contest Start (UTC)
+          <input id="e-start" class="form-input" type="datetime-local">
+        </label>
+        <label class="form-label">Contest End (UTC)
+          <input id="e-end" class="form-input" type="datetime-local">
+        </label>
+        <label class="form-label" style="grid-column:1/-1">Notes
+          <textarea id="e-notes" class="form-input form-textarea" rows="2"></textarea>
         </label>
       </div>
-      <div class="form-actions" style="gap:0.75rem; flex-wrap:wrap; margin-top:1rem;">
-        <a id="imp-adif-link" class="btn btn-primary" href="#" target="_blank" style="pointer-events:none; opacity:0.5;">Open ADIF Import</a>
-        <a id="imp-cab-link"  class="btn btn-secondary" href="#" target="_blank" style="pointer-events:none; opacity:0.5;">Open Cabrillo Import</a>
+      <div class="form-actions">
+        <button class="btn btn-outline" onclick="closeEditModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveContest()">Save Changes</button>
       </div>
-      <p style="font-size:13px; color:var(--text-muted); margin-top:0.75rem;">Opens in a new tab — select your file and click Upload.</p>
     </div>
-  </section>
+  </div>
 
   <!-- ── Notification area ─────────────────────────────────────────── -->
   <div id="toast-area" class="toast-area"></div>

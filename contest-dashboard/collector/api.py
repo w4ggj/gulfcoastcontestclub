@@ -252,6 +252,43 @@ def create_contest(body: ContestCreate):
     return {"id": cid}
 
 
+class ContestUpdate(BaseModel):
+    name: Optional[str] = None
+    contest_type: Optional[str] = None
+    year: Optional[int] = None
+    location: Optional[str] = None
+    station_callsign: Optional[str] = None
+    category: Optional[str] = None
+    start_utc: Optional[str] = None
+    end_utc: Optional[str] = None
+    notes: Optional[str] = None
+
+
+@app.put("/api/contests/{contest_id}", dependencies=[Depends(_require_admin)])
+def update_contest(contest_id: int, body: ContestUpdate):
+    conn = get_conn()
+    c = db.get_contest(conn, contest_id)
+    if c is None:
+        raise HTTPException(404, "Contest not found")
+    fields = body.model_dump(exclude_none=True)
+    if not fields:
+        raise HTTPException(400, "No fields to update")
+    db.update_contest(conn, contest_id, **fields)
+    return {"ok": True}
+
+
+@app.delete("/api/contests/{contest_id}", dependencies=[Depends(_require_admin)])
+def delete_contest(contest_id: int):
+    conn = get_conn()
+    c = db.get_contest(conn, contest_id)
+    if c is None:
+        raise HTTPException(404, "Contest not found")
+    if c["status"] == "live":
+        raise HTTPException(409, "Cannot delete a live contest — complete it first")
+    db.delete_contest(conn, contest_id)
+    return {"ok": True}
+
+
 @app.post("/api/contests/{contest_id}/start", dependencies=[Depends(_require_admin)])
 async def start_contest(contest_id: int):
     conn = get_conn()

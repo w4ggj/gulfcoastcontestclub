@@ -181,6 +181,26 @@ def create_contest(conn: sqlite3.Connection, **fields) -> int:
     return cur.lastrowid
 
 
+def update_contest(conn: sqlite3.Connection, contest_id: int, **fields) -> None:
+    if not fields:
+        return
+    sets = [f"{k}=?" for k in fields]
+    vals = list(fields.values()) + [contest_id]
+    conn.execute(f"UPDATE contests SET {', '.join(sets)} WHERE id=?", vals)
+    conn.commit()
+
+
+def delete_contest(conn: sqlite3.Connection, contest_id: int) -> None:
+    # Delete related rows first (foreign keys)
+    conn.execute("DELETE FROM config_events WHERE contest_id=?", (contest_id,))
+    conn.execute("DELETE FROM stations WHERE contest_id=?", (contest_id,))
+    conn.execute("DELETE FROM contacts WHERE contest_id=?", (contest_id,))
+    conn.execute("DELETE FROM score_snapshots WHERE contest_id=?", (contest_id,))
+    conn.execute("DELETE FROM imported_log_scores WHERE contest_id=?", (contest_id,))
+    conn.execute("DELETE FROM contests WHERE id=?", (contest_id,))
+    conn.commit()
+
+
 def set_contest_status(conn: sqlite3.Connection, contest_id: int, status: str, **extra) -> None:
     sets = ["status=?"]
     vals = [status]

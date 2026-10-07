@@ -86,27 +86,6 @@ async function loadContests() {
   sel.innerHTML = '<option value="">— select —</option>' +
     contests.map(c => `<option value="${c.id}">${esc(c.name)} (${c.year})</option>`).join('');
 
-  // Populate import-log contest selector
-  const impSel = el('imp-contest');
-  if (impSel) {
-    impSel.innerHTML = '<option value="">— select —</option>' +
-      contests.map(c => `<option value="${c.id}">${esc(c.name)} (${c.year})</option>`).join('');
-    impSel.onchange = () => {
-      const id = impSel.value;
-      const adifLink = el('imp-adif-link');
-      const cabLink  = el('imp-cab-link');
-      if (id) {
-        adifLink.href = `/api/contests/${id}/import_adif`;
-        adifLink.style.pointerEvents = ''; adifLink.style.opacity = '';
-        cabLink.href  = `/api/contests/${id}/import_adif`;  // same page, both formats
-        cabLink.style.pointerEvents = ''; cabLink.style.opacity = '';
-      } else {
-        adifLink.href = '#'; adifLink.style.pointerEvents = 'none'; adifLink.style.opacity = '0.5';
-        cabLink.href  = '#'; cabLink.style.pointerEvents = 'none';  cabLink.style.opacity = '0.5';
-      }
-    };
-  }
-
   // Live banner
   const live = contests.find(c => c.status === 'live');
   if (live) {
@@ -123,11 +102,15 @@ async function loadContests() {
 
   el('contest-list').innerHTML = contests.map(c => {
     const actions = [];
+    actions.push(`<button class="btn btn-outline btn-sm" onclick="editContest(${c.id})">Edit</button>`);
     if (c.status === 'draft') {
       actions.push(`<button class="btn btn-success btn-sm" onclick="startContest(${c.id})">Start</button>`);
     }
     if (c.status === 'live') {
       actions.push(`<button class="btn btn-danger btn-sm" onclick="completeContest(${c.id})">Complete</button>`);
+    }
+    if (c.status !== 'live') {
+      actions.push(`<button class="btn btn-danger btn-sm" onclick="deleteContest(${c.id}, '${esc(c.name).replace(/'/g, "\\'")}')">Delete</button>`);
     }
     return `<div class="contest-item">
       <div class="contest-item-info">
@@ -216,6 +199,69 @@ window.addStation = async function() {
   try {
     await api(`/api/contests/${contestId}/stations`, { method: 'POST', body });
     toast('Station saved.', 'ok');
+  } catch (e) {
+    toast(e.message, 'err');
+  }
+};
+
+// ── Edit contest ────────────────────────────────────────────────────────────
+window.editContest = async function(id) {
+  let c;
+  try {
+    c = await api(`/api/contests/${id}`);
+  } catch (e) {
+    toast(e.message, 'err'); return;
+  }
+  // Populate edit modal fields
+  el('edit-id').value        = c.id;
+  el('e-name').value         = c.name || '';
+  el('e-type').value         = c.contest_type || '';
+  el('e-year').value         = c.year || '';
+  el('e-location').value     = c.location || '';
+  el('e-callsign').value     = c.station_callsign || '';
+  el('e-category').value     = c.category || '';
+  el('e-start').value        = (c.start_utc || '').replace('Z','').slice(0,16);
+  el('e-end').value          = (c.end_utc || '').replace('Z','').slice(0,16);
+  el('e-notes').value        = c.notes || '';
+  el('edit-modal').classList.remove('hidden');
+};
+
+window.saveContest = async function() {
+  const id = el('edit-id').value;
+  const body = {};
+  const f = (fld, id_) => { const v = val(id_); if (v) body[fld] = v; };
+  f('name', 'e-name');
+  f('contest_type', 'e-type');
+  const yr = val('e-year');
+  if (yr) body.year = parseInt(yr, 10);
+  f('location', 'e-location');
+  f('station_callsign', 'e-callsign');
+  f('category', 'e-category');
+  f('start_utc', 'e-start');
+  f('end_utc', 'e-end');
+  f('notes', 'e-notes');
+
+  try {
+    await api(`/api/contests/${id}`, { method: 'PUT', body });
+    toast('Contest updated.', 'ok');
+    el('edit-modal').classList.add('hidden');
+    await loadContests();
+  } catch (e) {
+    toast(e.message, 'err');
+  }
+};
+
+window.closeEditModal = function() {
+  el('edit-modal').classList.add('hidden');
+};
+
+// ── Delete contest ──────────────────────────────────────────────────────────
+window.deleteContest = async function(id, name) {
+  if (!confirm(`Delete contest "${name}"? This removes ALL contacts, scores, and station data for this contest. This cannot be undone.`)) return;
+  try {
+    await api(`/api/contests/${id}`, { method: 'DELETE' });
+    toast('Contest deleted.', 'ok');
+    await loadContests();
   } catch (e) {
     toast(e.message, 'err');
   }
