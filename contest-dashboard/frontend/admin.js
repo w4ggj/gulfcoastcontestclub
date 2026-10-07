@@ -206,12 +206,13 @@ window.addStation = async function() {
 
 // ── Edit contest ────────────────────────────────────────────────────────────
 window.editContest = async function(id) {
-  let c;
+  let data;
   try {
-    c = await api(`/api/contests/${id}`);
+    data = await api(`/api/contests/${id}`);
   } catch (e) {
     toast(e.message, 'err'); return;
   }
+  const c = data.contest;
   // Populate edit modal fields
   el('edit-id').value        = c.id;
   el('e-name').value         = c.name || '';
