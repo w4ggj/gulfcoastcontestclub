@@ -25,7 +25,9 @@ sudo mkdir -p /media/usb
 # 4. Install the systemd service
 sudo cp ~/gulfcoastcontestclub/contest-dashboard/deploy/gccc-collector.service \
         /etc/systemd/system/
-# Edit the service file — fill in SUPABASE_URL and SUPABASE_SERVICE_KEY if using cloud mirror
+# Edit the service file:
+#   - Set ADMIN_PASSWORD to something only contest admins know
+#   - Fill in SUPABASE_URL and SUPABASE_SERVICE_KEY if using cloud mirror
 sudo nano /etc/systemd/system/gccc-collector.service
 sudo systemctl daemon-reload
 sudo systemctl enable --now gccc-collector

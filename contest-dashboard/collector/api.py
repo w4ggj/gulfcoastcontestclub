@@ -8,23 +8,26 @@ This file is only the local half.
 """
 
 import asyncio
+import hmac
 import json
 import logging
+import secrets
 from typing import Optional
 
 import hashlib
 import re
 from datetime import datetime, timezone
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, UploadFile, File
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, UploadFile, File, Depends
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 import db
 import mirror
-from config import DEFAULT_ROTATION_SECONDS
+from config import DEFAULT_ROTATION_SECONDS, ADMIN_PASSWORD
 
 log = logging.getLogger(__name__)
 
@@ -36,6 +39,46 @@ app.add_middleware(
     allow_methods=["GET"],
     allow_headers=["*"],
 )
+
+# ── Auth ──────────────────────────────────────────────────────────────────
+_active_tokens: set[str] = set()
+_bearer = HTTPBearer(auto_error=False)
+
+
+def _require_admin(creds: HTTPAuthorizationCredentials = Depends(_bearer)):
+    """Dependency: reject requests without a valid admin token."""
+    if creds is None or creds.credentials not in _active_tokens:
+        raise HTTPException(401, "Not authenticated")
+
+
+class LoginBody(BaseModel):
+    password: str
+
+
+@app.post("/api/auth/login")
+def login(body: LoginBody):
+    if not ADMIN_PASSWORD:
+        raise HTTPException(503, "ADMIN_PASSWORD not configured on the server")
+    if not hmac.compare_digest(body.password, ADMIN_PASSWORD):
+        raise HTTPException(403, "Wrong password")
+    token = secrets.token_hex(32)
+    _active_tokens.add(token)
+    return {"token": token}
+
+
+@app.post("/api/auth/logout")
+def logout(creds: HTTPAuthorizationCredentials = Depends(_bearer)):
+    if creds and creds.credentials in _active_tokens:
+        _active_tokens.discard(creds.credentials)
+    return {"ok": True}
+
+
+@app.get("/api/auth/check")
+def auth_check(creds: HTTPAuthorizationCredentials = Depends(_bearer)):
+    """Frontend calls this on load to see if its stored token is still valid."""
+    if creds and creds.credentials in _active_tokens:
+        return {"authenticated": True}
+    return JSONResponse({"authenticated": False}, status_code=401)
 
 # Shared connection — set in main.py before serving
 _conn = None
@@ -202,14 +245,14 @@ class ContestCreate(BaseModel):
     notes: Optional[str] = None
 
 
-@app.post("/api/contests", status_code=201)
+@app.post("/api/contests", status_code=201, dependencies=[Depends(_require_admin)])
 def create_contest(body: ContestCreate):
     conn = get_conn()
     cid = db.create_contest(conn, **body.model_dump(exclude_none=True))
     return {"id": cid}
 
 
-@app.post("/api/contests/{contest_id}/start")
+@app.post("/api/contests/{contest_id}/start", dependencies=[Depends(_require_admin)])
 async def start_contest(contest_id: int):
     conn = get_conn()
     live = conn.execute(
@@ -227,7 +270,7 @@ async def start_contest(contest_id: int):
     return {"status": "live"}
 
 
-@app.post("/api/contests/{contest_id}/complete")
+@app.post("/api/contests/{contest_id}/complete", dependencies=[Depends(_require_admin)])
 async def complete_contest(contest_id: int):
     conn = get_conn()
     c = db.get_contest(conn, contest_id)
@@ -251,7 +294,7 @@ class StationSetup(BaseModel):
     note: Optional[str] = None
 
 
-@app.post("/api/contests/{contest_id}/stations", status_code=201)
+@app.post("/api/contests/{contest_id}/stations", status_code=201, dependencies=[Depends(_require_admin)])
 def add_station(contest_id: int, body: StationSetup):
     conn = get_conn()
     sid = db.upsert_station(conn, contest_id, body.station_name, body.position_label)
@@ -465,7 +508,7 @@ def _adif_record_to_row(r):
                 is_run_qso=is_run_qso)
 
 
-@app.post("/api/contests/{contest_id}/import_adif")
+@app.post("/api/contests/{contest_id}/import_adif", dependencies=[Depends(_require_admin)])
 async def import_adif(contest_id: int, file: UploadFile = File(...)):
     conn = get_conn()
     contest = conn.execute("SELECT id, name FROM contests WHERE id=?", (contest_id,)).fetchone()
@@ -619,7 +662,7 @@ def _upsert_rows(conn, contest_id: int, rows: list, now: str):
     return inserted, updated, skipped
 
 
-@app.post("/api/contests/{contest_id}/import_cabrillo")
+@app.post("/api/contests/{contest_id}/import_cabrillo", dependencies=[Depends(_require_admin)])
 async def import_cabrillo(contest_id: int, file: UploadFile = File(...)):
     conn = get_conn()
     contest = conn.execute("SELECT id, name FROM contests WHERE id=?", (contest_id,)).fetchone()

@@ -21,6 +21,11 @@ UDP_BIND_HOST: str = os.getenv("N1MM_BIND_HOST", "0.0.0.0")
 API_HOST: str = os.getenv("API_HOST", "0.0.0.0")
 API_PORT: int = int(os.getenv("API_PORT", "8080"))
 
+# ── Admin auth ────────────────────────────────────────────────────────────
+# Required. Set this in the systemd service or .env before starting.
+# The admin page will refuse to load until a password is set.
+ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD", "")
+
 # ── Database ───────────────────────────────────────────────────────────────
 # Recommend pointing DB_PATH at a USB thumb drive, e.g. /media/usb/gccc.db
 DB_PATH: str = os.getenv("DB_PATH", "gccc_contest.db")

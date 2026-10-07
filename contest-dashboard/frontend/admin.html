@@ -11,6 +11,20 @@
 </head>
 <body class="admin-body">
 
+<!-- Login overlay -->
+<div id="login-overlay" class="login-overlay">
+  <div class="login-card">
+    <img src="logo.webp" alt="GCCC" width="48" height="48" style="margin-bottom:0.75rem">
+    <h2 style="margin:0 0 0.25rem; font-family:'Barlow Condensed',sans-serif; font-size:1.4rem; color:var(--text);">Admin Login</h2>
+    <p style="margin:0 0 1.25rem; font-size:13px; color:var(--text-muted);">GCCC Contest Dashboard</p>
+    <form id="login-form" onsubmit="handleLogin(event)">
+      <input id="login-pw" class="form-input" type="password" placeholder="Password" autocomplete="current-password" required style="width:100%; margin-bottom:0.75rem;">
+      <button class="btn btn-primary" type="submit" style="width:100%;">Log In</button>
+    </form>
+    <p id="login-error" style="color:#e53e3e; font-size:13px; margin:0.75rem 0 0; display:none;"></p>
+  </div>
+</div>
+
 <nav class="site-nav">
   <div class="nav-inner">
     <a href="index.html" class="nav-brand">
@@ -20,8 +34,9 @@
         <span class="nav-brand-name">Contest Dashboard</span>
       </div>
     </a>
-    <div>
+    <div style="display:flex; align-items:center;">
       <a href="index.html" class="nav-link">← Dashboard</a>
+      <button class="nav-logout" onclick="handleLogout()">Log Out</button>
     </div>
   </div>
 </nav>

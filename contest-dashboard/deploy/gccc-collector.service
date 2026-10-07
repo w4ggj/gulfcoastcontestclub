@@ -20,6 +20,9 @@ Environment=API_PORT=8080
 Environment=ROTATION_SECONDS=30
 Environment=EXPECT_DUPES=true
 
+# Admin password (required — the admin page won't work without this)
+Environment=ADMIN_PASSWORD=changeme
+
 # Supabase (optional — leave blank to disable cloud mirror)
 Environment=SUPABASE_URL=
 Environment=SUPABASE_SERVICE_KEY=

@@ -2,9 +2,73 @@
 
 const API = '';   // same-origin; relative URLs
 
+// ── Auth ────────────────────────────────────────────────────────────────────
+let _token = sessionStorage.getItem('gccc_admin_token') || '';
+
+function showLogin() {
+  el('login-overlay').classList.remove('hidden');
+}
+function hideLogin() {
+  el('login-overlay').classList.add('hidden');
+}
+
+window.handleLogin = async function(e) {
+  e.preventDefault();
+  const pw = el('login-pw').value;
+  const errEl = el('login-error');
+  errEl.style.display = 'none';
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pw }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.detail || 'Login failed');
+    }
+    const data = await res.json();
+    _token = data.token;
+    sessionStorage.setItem('gccc_admin_token', _token);
+    hideLogin();
+    await loadContests();
+  } catch (err) {
+    errEl.textContent = err.message;
+    errEl.style.display = 'block';
+  }
+};
+
+window.handleLogout = async function() {
+  try {
+    await fetch('/api/auth/logout', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + _token },
+    });
+  } catch (_) {}
+  _token = '';
+  sessionStorage.removeItem('gccc_admin_token');
+  showLogin();
+};
+
 // ── Boot ────────────────────────────────────────────────────────────────────
 (async function init() {
-  await loadContests();
+  // Check if we have a valid stored token
+  if (_token) {
+    try {
+      const res = await fetch('/api/auth/check', {
+        headers: { 'Authorization': 'Bearer ' + _token },
+      });
+      if (res.ok) {
+        hideLogin();
+        await loadContests();
+        return;
+      }
+    } catch (_) {}
+  }
+  // No valid token — clear stale one and show login
+  _token = '';
+  sessionStorage.removeItem('gccc_admin_token');
+  showLogin();
 })();
 
 // ── Contest list ────────────────────────────────────────────────────────────
@@ -165,12 +229,21 @@ function esc(s) {
 }
 
 async function api(path, opts = {}) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (_token) headers['Authorization'] = 'Bearer ' + _token;
   const options = {
     method: opts.method || 'GET',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
   };
   if (opts.body) options.body = JSON.stringify(opts.body);
   const res = await fetch(path, options);
+  if (res.status === 401) {
+    // Token expired or invalid — force re-login
+    _token = '';
+    sessionStorage.removeItem('gccc_admin_token');
+    showLogin();
+    throw new Error('Session expired — please log in again');
+  }
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }));
     throw new Error(err.detail || res.statusText);
