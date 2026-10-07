@@ -166,7 +166,7 @@ def get_contest(conn: sqlite3.Connection, contest_id: int) -> Optional[sqlite3.R
 
 def list_contests(conn: sqlite3.Connection) -> list[sqlite3.Row]:
     return conn.execute(
-        "SELECT * FROM contests ORDER BY started_at DESC"
+        "SELECT * FROM contests ORDER BY created_at DESC"
     ).fetchall()
 
 
