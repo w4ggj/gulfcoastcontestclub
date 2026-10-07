@@ -18,6 +18,7 @@ import json
 import logging
 import socket
 import sys
+from datetime import datetime, timezone, timedelta
 
 import uvicorn
 
@@ -57,8 +58,8 @@ class UDPListener(asyncio.DatagramProtocol):
 
         # Contest binding (§4): only process if a contest is live
         contest = db.get_live_contest(conn)
-        if contest is None or contest["status"] != "live":
-            log.debug("No live contest — dropping %s packet", ptype)
+        if contest is None:
+            log.debug("No live contest — quarantining %s packet", ptype)
             return
 
         contest_id = contest["id"]
@@ -102,20 +103,11 @@ class UDPListener(asyncio.DatagramProtocol):
             await broadcast({"type": "stats_update", "stats": stats})
 
         elif ptype == "score":
-            # Only save if the score changed (dynamicresults fires every 10 s)
-            last = db.get_latest_score(conn, contest_id)
-            new_score = payload.get("score") or 0
-            if last is None or last["score"] != new_score:
-                log.info(
-                    "Score update: qsos=%s points=%s mults=%s score=%s",
-                    payload.get("total_qsos"), payload.get("total_points"),
-                    payload.get("total_mults"), new_score,
-                )
-                with db.transaction(conn):
-                    db.upsert_score_snapshot(conn, contest_id, payload)
-                    db.enqueue_mirror(conn, "upsert_score",
-                                      {"contest_id": contest_id, **payload})
-                await broadcast({"type": "score_update", "score": payload})
+            with db.transaction(conn):
+                db.upsert_score_snapshot(conn, contest_id, payload)
+                db.enqueue_mirror(conn, "upsert_score",
+                                  {"contest_id": contest_id, **payload})
+            await broadcast({"type": "score_update", "score": payload})
 
 
 async def run_udp(conn, loop):
@@ -127,6 +119,58 @@ async def run_udp(conn, loop):
         allow_broadcast=True,
     )
     return transport
+
+
+async def contest_scheduler(conn):
+    """Auto-start drafts 2 min before start_utc, auto-complete live contests
+    2 min after end_utc. Checks every 30 seconds."""
+    log.info("Contest scheduler started")
+    while True:
+        try:
+            now = datetime.now(timezone.utc)
+
+            # Auto-start: draft contests whose start_utc is <= 2 min from now
+            drafts = conn.execute(
+                "SELECT id, name, start_utc FROM contests "
+                "WHERE status='draft' AND start_utc IS NOT NULL AND start_utc != ''"
+            ).fetchall()
+            for c in drafts:
+                try:
+                    start = datetime.fromisoformat(c["start_utc"].replace("Z", "+00:00"))
+                except (ValueError, AttributeError):
+                    continue
+                if now >= start - timedelta(minutes=2):
+                    # Check no other contest is already live
+                    already_live = conn.execute(
+                        "SELECT id FROM contests WHERE status='live' LIMIT 1"
+                    ).fetchone()
+                    if already_live:
+                        log.warning("Skipping auto-start of contest %d (%s) — contest %d already live",
+                                    c["id"], c["name"], already_live["id"])
+                        continue
+                    db.set_contest_status(conn, c["id"], "live")
+                    log.info("Auto-started contest %d (%s)", c["id"], c["name"])
+                    await broadcast({"type": "contest_started", "contest_id": c["id"]})
+
+            # Auto-complete: live contests whose end_utc + 2 min has passed
+            lives = conn.execute(
+                "SELECT id, name, end_utc FROM contests "
+                "WHERE status='live' AND end_utc IS NOT NULL AND end_utc != ''"
+            ).fetchall()
+            for c in lives:
+                try:
+                    end = datetime.fromisoformat(c["end_utc"].replace("Z", "+00:00"))
+                except (ValueError, AttributeError):
+                    continue
+                if now >= end + timedelta(minutes=2):
+                    db.set_contest_status(conn, c["id"], "complete")
+                    log.info("Auto-completed contest %d (%s)", c["id"], c["name"])
+                    await broadcast({"type": "contest_completed", "contest_id": c["id"]})
+
+        except Exception:
+            log.exception("Contest scheduler error")
+
+        await asyncio.sleep(30)
 
 
 async def main():
@@ -143,6 +187,9 @@ async def main():
 
     # Start Supabase mirror drain loop
     asyncio.create_task(mirror.drain_loop(conn))
+
+    # Start contest auto-start/stop scheduler
+    asyncio.create_task(contest_scheduler(conn))
 
     # Start FastAPI / uvicorn
     config = uvicorn.Config(
