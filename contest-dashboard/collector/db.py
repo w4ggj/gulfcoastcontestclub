@@ -75,6 +75,7 @@ CREATE TABLE IF NOT EXISTS contacts (
     is_mult2        INTEGER DEFAULT 0,
     is_mult3        INTEGER DEFAULT 0,
     is_run_qso      INTEGER,   -- NULL if packet doesn't carry it
+    gridsquare      TEXT,
     deleted         INTEGER NOT NULL DEFAULT 0,
     created_utc     TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
     updated_utc     TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
@@ -141,8 +142,16 @@ CREATE TABLE IF NOT EXISTS imported_log_scores (
 """
 
 
+def _migrate_add_column(conn, table, column, col_type):
+    cols = {row[1] for row in conn.execute(f"PRAGMA table_info({table})").fetchall()}
+    if column not in cols:
+        conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {col_type}")
+        log.info("Migration: added %s.%s", table, column)
+
+
 def init_db(conn: sqlite3.Connection) -> None:
     conn.executescript(SCHEMA)
+    _migrate_add_column(conn, "contacts", "gridsquare", "TEXT")
     conn.commit()
     log.info("Database schema initialized at %s", DB_PATH)
 
@@ -223,8 +232,8 @@ def upsert_contact(conn: sqlite3.Connection, contest_id: int, data: dict) -> Non
         INSERT INTO contacts
             (contest_id, n1mm_id, operator, call, band, mode, rx_freq, tx_freq,
              points, station_name, radio_nr, is_original, qso_utc,
-             is_mult1, is_mult2, is_mult3, is_run_qso, deleted, updated_utc)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,strftime('%Y-%m-%dT%H:%M:%SZ','now'))
+             is_mult1, is_mult2, is_mult3, is_run_qso, gridsquare, deleted, updated_utc)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,strftime('%Y-%m-%dT%H:%M:%SZ','now'))
         ON CONFLICT(contest_id, n1mm_id) DO UPDATE SET
             operator=excluded.operator,
             call=excluded.call,
@@ -241,6 +250,7 @@ def upsert_contact(conn: sqlite3.Connection, contest_id: int, data: dict) -> Non
             is_mult2=excluded.is_mult2,
             is_mult3=excluded.is_mult3,
             is_run_qso=excluded.is_run_qso,
+            gridsquare=excluded.gridsquare,
             deleted=0,
             updated_utc=strftime('%Y-%m-%dT%H:%M:%SZ','now')
     """, (
@@ -261,6 +271,7 @@ def upsert_contact(conn: sqlite3.Connection, contest_id: int, data: dict) -> Non
         data.get("is_mult2", 0),
         data.get("is_mult3", 0),
         data.get("is_run_qso"),
+        data.get("gridsquare"),
     ))
 
 

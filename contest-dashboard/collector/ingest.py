@@ -117,6 +117,7 @@ def _parse_contact(root: ET.Element) -> Optional[dict]:
         "is_mult2":     _bool_flag(root, F["is_mult2"]),
         "is_mult3":     _bool_flag(root, F["is_mult3"]),
         "is_run_qso":   (1 if is_run_raw in ("1", "true") else 0) if is_run_raw is not None else None,
+        "gridsquare":   _txt(root, F["gridsquare"]),
         "contest_name": _txt(root, F["contest_name"]),
     }
 

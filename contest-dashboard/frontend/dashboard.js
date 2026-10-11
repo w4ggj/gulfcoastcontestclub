@@ -489,6 +489,35 @@ const BAND_COLORS = {
 };
 const BAND_ORDER = ['160m','80m','40m','20m','15m','10m','6m','2m'];
 
+// ── Maidenhead grid-square → lat/lon converter ──────────────────────────
+function gridToLatLon(grid) {
+  if (!grid || grid.length < 2) return null;
+  grid = grid.toUpperCase();
+  const A = 'A'.charCodeAt(0);
+  const f0 = grid.charCodeAt(0) - A;
+  const f1 = grid.charCodeAt(1) - A;
+  if (f0 < 0 || f0 > 17 || f1 < 0 || f1 > 17) return null;
+  let lon = f0 * 20 - 180;
+  let lat = f1 * 10 - 90;
+  let lonStep = 20, latStep = 10;
+  if (grid.length >= 4) {
+    const s0 = parseInt(grid[2], 10);
+    const s1 = parseInt(grid[3], 10);
+    if (isNaN(s0) || isNaN(s1)) return null;
+    lon += s0 * 2;   lonStep = 2;
+    lat += s1 * 1;   latStep = 1;
+  }
+  if (grid.length >= 6) {
+    const ss0 = grid.charCodeAt(4) - A;
+    const ss1 = grid.charCodeAt(5) - A;
+    if (ss0 < 0 || ss0 > 23 || ss1 < 0 || ss1 > 23) return null;
+    lon += ss0 * (2/24);  lonStep = 2/24;
+    lat += ss1 * (1/24);  latStep = 1/24;
+  }
+  return [lat + latStep / 2, lon + lonStep / 2];
+}
+
+// Prefix-based fallback coordinates (used when no grid square available)
 const PREFIX_COORDS = {
   'W1':[43.5,-72],'K1':[43.5,-72],'N1':[43.5,-72],
   'W2':[40.7,-74],'K2':[40.7,-74],'N2':[40.7,-74],
@@ -708,14 +737,16 @@ async function renderDashMap(container, contacts, legendEl) {
     .attr('d', path).attr('fill', 'none')
     .attr('stroke', 'rgba(255,255,255,0.07)').attr('stroke-width', 0.3);
 
-  // Build unique entity map
+  // Build unique entity map — prefer grid square, fall back to prefix lookup
   const entities = {};
   contacts.forEach(c => {
     if (!c.call) return;
-    const coords = lookupCallsign(c.call);
+    const coords = gridToLatLon(c.gridsquare) || lookupCallsign(c.call);
     if (!coords) return;
     const band = c.band || '20m';
-    const key  = c.call.slice(0, 4) + '|' + band;
+    // Dedupe by grid+band (precise) or prefix+band (fallback)
+    const locKey = c.gridsquare ? c.gridsquare.toUpperCase().slice(0,4) : c.call.slice(0,4);
+    const key  = locKey + '|' + band;
     if (!entities[key]) entities[key] = { call: c.call, coords, band, count: 0 };
     entities[key].count++;
   });

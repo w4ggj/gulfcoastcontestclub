@@ -78,6 +78,7 @@ N1MM_FIELDS = {
     "is_mult2":        "ismult2",
     "is_mult3":        "ismult3",
     "is_run_qso":      "IsRunQSO",      # 1=Run, 0=S&P (nice-to-have; may be absent)
+    "gridsquare":      "gridsquare",   # Maidenhead grid of worked station (e.g. "FN42")
     "contest_name":    "contestname",
     "contest_nr":      "contestnr",
 
