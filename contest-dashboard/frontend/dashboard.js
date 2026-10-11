@@ -554,7 +554,7 @@ const PREFIX_COORDS = {
   'LU':[-34,-64],'LS':[-34,-64],'LT':[-34,-64],'LV':[-34,-64],'LW':[-34,-64],
   'CE':[-33,-71],'OA':[-12,-77],'HC':[-2,-78],
   'HK':[4,-74],'YV':[8,-66],'4M':[8,-66],'ZP':[-23,-58],'CX':[-34,-56],'CP':[-17,-65],
-  'FY':[4,-53],
+  'FY':[4,-53],'FM':[14.6,-61],'FG':[16.2,-61.5],
   'G':[52,-1],'M':[52,-1],'GX':[52,-1],'2E':[52,-1],
   'GI':[54.6,-6.3],'MI':[54.6,-6.3],'GW':[52.1,-3.7],'MW':[52.1,-3.7],
   'GM':[57,-4],'MM':[57,-4],
@@ -744,10 +744,15 @@ async function renderDashMap(container, contacts, legendEl) {
     const coords = gridToLatLon(c.gridsquare) || lookupCallsign(c.call);
     if (!coords) return;
     const band = c.band || '20m';
-    // Dedupe by grid+band (precise) or prefix+band (fallback)
-    const locKey = c.gridsquare ? c.gridsquare.toUpperCase().slice(0,4) : c.call.slice(0,4);
+    // Dedupe by grid+band (precise) or resolved-coords+band (fallback)
+    const locKey = c.gridsquare
+      ? c.gridsquare.toUpperCase().slice(0,4)
+      : coords[0].toFixed(1) + ',' + coords[1].toFixed(1);
     const key  = locKey + '|' + band;
-    if (!entities[key]) entities[key] = { call: c.call, coords, band, count: 0 };
+    if (!entities[key]) {
+      entities[key] = { call: c.call, coords, band, count: 0, calls: [] };
+    }
+    entities[key].calls.push(c.call);
     entities[key].count++;
   });
 
@@ -755,7 +760,9 @@ async function renderDashMap(container, contacts, legendEl) {
   const gDots  = svg.append('g');
   const bandsUsed = new Set();
 
-  Object.values(entities).forEach(({ call, coords, band, count }) => {
+  const gLabels = svg.append('g');
+
+  Object.values(entities).forEach(({ call, coords, band, count, calls }) => {
     const [lat, lon] = coords;
     const destPt = proj([lon, lat]);
     if (!destPt) return;
@@ -768,10 +775,28 @@ async function renderDashMap(container, contacts, legendEl) {
       .attr('d', path).attr('fill', 'none')
       .attr('stroke', color).attr('stroke-width', 1.2).attr('stroke-opacity', 0.5);
 
+    // Scale dot radius: 4px base, grows with sqrt of count, cap at 14
+    const r = Math.min(4 + Math.sqrt(count) * 2, 14);
+    const tip = count > 1
+      ? `${count} QSOs on ${band}\n${calls.slice(0, 8).join(', ')}${calls.length > 8 ? '…' : ''}`
+      : `${call} · ${band}`;
+
     gDots.append('circle')
-      .attr('cx', destPt[0]).attr('cy', destPt[1]).attr('r', 4)
-      .attr('fill', color).attr('stroke', 'rgba(0,0,0,0.6)').attr('stroke-width', 0.8)
-      .append('title').text(`${call} · ${band} · ${count} QSO${count > 1 ? 's' : ''}`);
+      .attr('cx', destPt[0]).attr('cy', destPt[1]).attr('r', r)
+      .attr('fill', color).attr('fill-opacity', 0.85)
+      .attr('stroke', 'rgba(0,0,0,0.6)').attr('stroke-width', 0.8)
+      .append('title').text(tip);
+
+    // Show count label on clusters of 2+
+    if (count > 1) {
+      gLabels.append('text')
+        .attr('x', destPt[0]).attr('y', destPt[1] + 1)
+        .attr('text-anchor', 'middle').attr('dominant-baseline', 'middle')
+        .attr('fill', '#fff').attr('font-size', Math.min(r * 1.2, 11) + 'px')
+        .attr('font-weight', '700').attr('font-family', 'Barlow Condensed,sans-serif')
+        .attr('pointer-events', 'none')
+        .text(count);
+    }
   });
 
   // Home station marker
