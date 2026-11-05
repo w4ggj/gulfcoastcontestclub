@@ -648,4 +648,6 @@ img { max-width: 100%; display: block; }
   .container { padding: 0 1.25rem; }
   .results-table th:nth-child(3),
   .results-table td:nth-child(3) { display: none; }
+  /* Two-column page layouts set inline on index/about/contact stack on phones */
+  .split-2 { grid-template-columns: 1fr !important; }
 }

@@ -1,0 +1,7 @@
+User-agent: *
+Disallow: /contest-dashboard/
+Disallow: /tools/
+Disallow: /*.py$
+Disallow: /*.gs$
+
+Sitemap: https://gulfcoastcontestclub.org/sitemap.xml
