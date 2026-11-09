@@ -99,6 +99,49 @@
     </div>
   </section>
 
+  <!-- ── Import from ContestClock ──────────────────────────────────── -->
+  <section class="admin-section">
+    <h2 class="admin-section-title">Import from ContestClock</h2>
+    <p class="admin-hint">Pull upcoming contests from <a href="https://contestclock.com" target="_blank" rel="noopener">contestclock.com</a> and add them to your dashboard. Select a mode to filter, then pick which contests to import.</p>
+
+    <div class="admin-card">
+      <div class="form-grid" style="grid-template-columns: 1fr 1fr auto; align-items:end;">
+        <label class="form-label">Mode Filter
+          <select id="import-mode" class="form-input">
+            <option value="">All Modes</option>
+            <option value="RTTY" selected>RTTY</option>
+            <option value="CW">CW</option>
+            <option value="SSB">SSB</option>
+            <option value="FT8">FT8</option>
+            <option value="Digital">Digital</option>
+            <option value="Mixed">Mixed</option>
+          </select>
+        </label>
+        <label class="form-label">Time Range
+          <select id="import-range" class="form-input">
+            <option value="30">Next 30 days</option>
+            <option value="60">Next 60 days</option>
+            <option value="90" selected>Next 90 days</option>
+            <option value="180">Next 6 months</option>
+          </select>
+        </label>
+        <button class="btn btn-primary" onclick="fetchContestClock()" style="margin-bottom:2px;">Fetch Contests</button>
+      </div>
+
+      <div id="import-status" style="margin-top:0.75rem; font-size:13px; color:var(--text-muted); display:none;"></div>
+
+      <div id="import-results" style="margin-top:1rem; display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+          <label style="font-size:13px; color:var(--text-muted); cursor:pointer;">
+            <input type="checkbox" id="import-select-all" onchange="toggleImportAll(this.checked)"> Select all
+          </label>
+          <button class="btn btn-primary btn-sm" onclick="importSelected()">Import Selected</button>
+        </div>
+        <div id="import-list" class="contest-list"></div>
+      </div>
+    </div>
+  </section>
+
   <!-- ── Station setup ─────────────────────────────────────────────── -->
   <section class="admin-section" id="station-section">
     <h2 class="admin-section-title">Station Setup <span id="station-contest-label" class="muted"></span></h2>

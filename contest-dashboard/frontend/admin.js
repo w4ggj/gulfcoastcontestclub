@@ -318,3 +318,150 @@ function toast(msg, type = 'ok') {
   area.appendChild(div);
   setTimeout(() => div.remove(), 4000);
 }
+
+// ── ContestClock Import ─────────────────────────────────────────────────────
+
+window.fetchContestClock = async function() {
+  const mode = val('import-mode');
+  const days = parseInt(val('import-range'), 10) || 90;
+  const statusEl = el('import-status');
+  const resultsEl = el('import-results');
+  const listEl = el('import-list');
+
+  statusEl.style.display = 'block';
+  statusEl.textContent = 'Fetching contests from contestclock.com…';
+  resultsEl.style.display = 'none';
+
+  // Build date range
+  const now = new Date();
+  const from = now.toISOString().slice(0, 10);
+  const to = new Date(now.getTime() + days * 86400000).toISOString().slice(0, 10);
+
+  let url = `https://contestclock.com/api/contests?from=${from}&to=${to}`;
+
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`contestclock.com returned ${res.status}`);
+    const data = await res.json();
+
+    let contests = data.occurrences || [];
+
+    // Filter by mode if selected
+    if (mode) {
+      contests = contests.filter(c => {
+        const modes = (c.modes || []).concat(c.mode_families || []);
+        return modes.some(m => m.toUpperCase() === mode.toUpperCase());
+      });
+    }
+
+    if (!contests.length) {
+      statusEl.textContent = `No ${mode || ''} contests found in the next ${days} days.`;
+      return;
+    }
+
+    // Check which contests already exist locally (by name + year)
+    let existing = [];
+    try {
+      existing = await api('/api/contests');
+    } catch (_) {}
+    const existingKeys = new Set(existing.map(c => `${c.name.toLowerCase()}|${c.year}`));
+
+    // Render results
+    statusEl.textContent = `Found ${contests.length} contest${contests.length !== 1 ? 's' : ''}. Select which to import:`;
+    resultsEl.style.display = 'block';
+    el('import-select-all').checked = false;
+
+    listEl.innerHTML = contests.map((c, i) => {
+      const startD = new Date(c.start);
+      const endD = new Date(c.end);
+      const year = startD.getFullYear();
+      const fmtDate = d => d.toLocaleDateString('en-US', {month:'short', day:'numeric'}) + ' ' +
+                           d.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit', hour12:true});
+      const key = `${c.name.toLowerCase()}|${year}`;
+      const alreadyExists = existingKeys.has(key);
+      const modes = (c.modes || []).join(', ');
+      const bands = (c.bands || []).join(', ');
+
+      return `<div class="contest-item" style="opacity:${alreadyExists ? '0.5' : '1'}">
+        <div style="display:flex; align-items:center; gap:0.75rem;">
+          <input type="checkbox" class="import-cb" data-idx="${i}"
+                 ${alreadyExists ? 'disabled title="Already exists"' : ''}>
+          <div class="contest-item-info">
+            <span class="contest-item-name">${esc(c.name)}</span>
+            <span class="contest-item-meta">
+              ${fmtDate(startD)} – ${fmtDate(endD)} ·
+              ${esc(modes)} · ${esc(bands)}
+              ${c.sponsor ? ' · ' + esc(c.sponsor) : ''}
+              ${alreadyExists ? ' · <strong style="color:var(--text-muted);">Already imported</strong>' : ''}
+            </span>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+
+    // Store contest data for later import
+    window._importContests = contests;
+
+  } catch (err) {
+    statusEl.textContent = 'Error: ' + err.message;
+  }
+};
+
+window.toggleImportAll = function(checked) {
+  document.querySelectorAll('.import-cb:not(:disabled)').forEach(cb => cb.checked = checked);
+};
+
+window.importSelected = async function() {
+  const contests = window._importContests;
+  if (!contests) return;
+
+  const selected = [];
+  document.querySelectorAll('.import-cb:checked').forEach(cb => {
+    const idx = parseInt(cb.dataset.idx, 10);
+    if (contests[idx]) selected.push(contests[idx]);
+  });
+
+  if (!selected.length) {
+    toast('No contests selected.', 'err');
+    return;
+  }
+
+  const statusEl = el('import-status');
+  let imported = 0, failed = 0;
+
+  for (const c of selected) {
+    const startD = new Date(c.start);
+    const year = startD.getFullYear();
+    const mode = (c.modes && c.modes[0]) || 'MIXED';
+
+    const body = {
+      name: c.name,
+      contest_type: mode,
+      year: year,
+      start_utc: c.start,
+      end_utc: c.end,
+      notes: [
+        c.sponsor ? `Sponsor: ${c.sponsor}` : '',
+        c.exchange ? `Exchange: ${c.exchange}` : '',
+        c.rules_url ? `Rules: ${c.rules_url}` : '',
+        c.bands ? `Bands: ${c.bands.join(', ')}` : '',
+      ].filter(Boolean).join('\n'),
+    };
+
+    try {
+      await api('/api/contests', { method: 'POST', body });
+      imported++;
+    } catch (e) {
+      console.error(`Failed to import ${c.name}:`, e);
+      failed++;
+    }
+  }
+
+  const msg = `Imported ${imported} contest${imported !== 1 ? 's' : ''}${failed ? `, ${failed} failed` : ''}.`;
+  toast(msg, failed ? 'err' : 'ok');
+  statusEl.textContent = msg;
+
+  // Refresh contests list and re-fetch to update "already imported" badges
+  await loadContests();
+  await fetchContestClock();
+};
