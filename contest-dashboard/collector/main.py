@@ -7,7 +7,7 @@ Usage:
 
 Environment variables (see config.py for full list):
     DB_PATH              path to SQLite file (recommend on USB stick)
-    N1MM_UDP_PORT        default 12060
+    N1MM_UDP_PORT        default 12050
     API_PORT             default 8080
     SUPABASE_URL         optional
     SUPABASE_SERVICE_KEY optional
@@ -121,6 +121,22 @@ async def run_udp(conn, loop):
     return transport
 
 
+def _parse_utc(raw: str) -> datetime | None:
+    """Parse an ISO timestamp and guarantee it's timezone-aware (UTC).
+
+    Handles values stored with 'Z', with '+00:00', or with no timezone
+    suffix at all (treated as UTC).
+    """
+    try:
+        dt = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+    except (ValueError, AttributeError):
+        return None
+    # If the value had no tz suffix, fromisoformat returns naive — assume UTC
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt
+
+
 async def contest_scheduler(conn):
     """Auto-start drafts 2 min before start_utc, auto-complete live contests
     2 min after end_utc. Checks every 30 seconds."""
@@ -135,11 +151,8 @@ async def contest_scheduler(conn):
                 "WHERE status='draft' AND start_utc IS NOT NULL AND start_utc != ''"
             ).fetchall()
             for c in drafts:
-                try:
-                    start = datetime.fromisoformat(c["start_utc"].replace("Z", "+00:00"))
-                    if start.tzinfo is None:
-                        start = start.replace(tzinfo=timezone.utc)
-                except (ValueError, AttributeError):
+                start = _parse_utc(c["start_utc"])
+                if start is None:
                     continue
                 if now >= start - timedelta(minutes=2):
                     # Check no other contest is already live
@@ -160,11 +173,8 @@ async def contest_scheduler(conn):
                 "WHERE status='live' AND end_utc IS NOT NULL AND end_utc != ''"
             ).fetchall()
             for c in lives:
-                try:
-                    end = datetime.fromisoformat(c["end_utc"].replace("Z", "+00:00"))
-                    if end.tzinfo is None:
-                        end = end.replace(tzinfo=timezone.utc)
-                except (ValueError, AttributeError):
+                end = _parse_utc(c["end_utc"])
+                if end is None:
                     continue
                 if now >= end + timedelta(minutes=2):
                     db.set_contest_status(conn, c["id"], "complete")

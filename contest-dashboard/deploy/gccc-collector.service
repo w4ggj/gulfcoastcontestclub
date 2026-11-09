@@ -14,7 +14,7 @@ WorkingDirectory=/home/pi/gulfcoastcontestclub/contest-dashboard/collector
 
 # ── Edit these paths/values for your Pi ──────────────────────────────────────
 Environment=DB_PATH=/media/usb/gccc_contest.db
-Environment=N1MM_UDP_PORT=12060
+Environment=N1MM_UDP_PORT=12050
 Environment=API_HOST=0.0.0.0
 Environment=API_PORT=8080
 Environment=ROTATION_SECONDS=30

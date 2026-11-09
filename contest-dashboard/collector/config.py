@@ -14,7 +14,7 @@ layer can adapt without code changes.
 import os
 
 # ── Network ────────────────────────────────────────────────────────────────
-UDP_PORT: int = int(os.getenv("N1MM_UDP_PORT", "12060"))
+UDP_PORT: int = int(os.getenv("N1MM_UDP_PORT", "12050"))
 UDP_BIND_HOST: str = os.getenv("N1MM_BIND_HOST", "0.0.0.0")
 
 # ── Local API ──────────────────────────────────────────────────────────────

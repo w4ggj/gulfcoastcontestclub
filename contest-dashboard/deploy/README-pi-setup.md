@@ -67,7 +67,7 @@ xset s off; xset -dpms; xset s noblank
 In N1MM: **Config → Configure Ports → Broadcast Data → Contacts**
 
 - Enable: `ContactInfo`
-- Send to: `192.168.1.255:12060`  ← subnet broadcast (`.255`) on port `12060`
+- Send to: `192.168.1.255:12050`  ← subnet broadcast (`.255`) on port `12050`
 - Use the **same config on every seat** — the Pi hears all of them on one socket.
 
 Do **not** enable `LookupInfo` — it fires before the QSO is logged (on spacebar), not after.
@@ -81,8 +81,8 @@ python3 - <<'EOF'
 import socket, sys
 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-s.bind(('', 12060))
-print("Listening on :12060 — log a QSO in N1MM…")
+s.bind(('', 12050))
+print("Listening on :12050 — log a QSO in N1MM…")
 while True:
     data, addr = s.recvfrom(65535)
     print(f"\n=== from {addr} ===")
