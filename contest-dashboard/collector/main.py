@@ -137,6 +137,8 @@ async def contest_scheduler(conn):
             for c in drafts:
                 try:
                     start = datetime.fromisoformat(c["start_utc"].replace("Z", "+00:00"))
+                    if start.tzinfo is None:
+                        start = start.replace(tzinfo=timezone.utc)
                 except (ValueError, AttributeError):
                     continue
                 if now >= start - timedelta(minutes=2):
@@ -160,6 +162,8 @@ async def contest_scheduler(conn):
             for c in lives:
                 try:
                     end = datetime.fromisoformat(c["end_utc"].replace("Z", "+00:00"))
+                    if end.tzinfo is None:
+                        end = end.replace(tzinfo=timezone.utc)
                 except (ValueError, AttributeError):
                     continue
                 if now >= end + timedelta(minutes=2):
