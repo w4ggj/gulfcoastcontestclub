@@ -107,7 +107,7 @@ async function loadContests() {
   const upcoming = [];
   const completed = [];
   for (const c of contests) {
-    if (c.status === 'completed') {
+    if (c.status === 'complete') {
       completed.push(c);
     } else {
       upcoming.push(c);
