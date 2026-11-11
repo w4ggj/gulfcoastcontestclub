@@ -77,7 +77,7 @@ async function loadContests() {
   try {
     contests = await api('/api/contests');
   } catch (e) {
-    el('contest-list').innerHTML = `<p class="muted">Could not load contests: ${e.message}</p>`;
+    el('contest-list-upcoming').innerHTML = `<p class="muted">Could not load contests: ${e.message}</p>`;
     return;
   }
 
@@ -92,15 +92,43 @@ async function loadContests() {
     el('live-banner').classList.remove('hidden');
     el('live-banner-text').textContent = `Live: ${live.name}`;
     window._liveContestId = live.id;
+  } else {
+    el('live-banner').classList.add('hidden');
   }
 
-  // Contest list
   if (!contests.length) {
-    el('contest-list').innerHTML = '<p class="muted">No contests yet. Create one above.</p>';
+    el('contest-list-upcoming').innerHTML = '<p class="muted">No contests yet. Create one above.</p>';
+    el('contest-list-completed').innerHTML = '<p class="muted">None yet.</p>';
     return;
   }
 
-  el('contest-list').innerHTML = contests.map(c => {
+  // Split into upcoming/active vs completed
+  const now = new Date();
+  const upcoming = [];
+  const completed = [];
+  for (const c of contests) {
+    if (c.status === 'completed') {
+      completed.push(c);
+    } else {
+      upcoming.push(c);
+    }
+  }
+
+  // Sort upcoming by start_utc ascending (soonest first)
+  upcoming.sort((a, b) => {
+    const da = a.start_utc ? new Date(a.start_utc.endsWith('Z') ? a.start_utc : a.start_utc + 'Z') : new Date('9999');
+    const db = b.start_utc ? new Date(b.start_utc.endsWith('Z') ? b.start_utc : b.start_utc + 'Z') : new Date('9999');
+    return da - db;
+  });
+
+  // Sort completed by end_utc descending (most recent first)
+  completed.sort((a, b) => {
+    const da = a.end_utc ? new Date(a.end_utc.endsWith('Z') ? a.end_utc : a.end_utc + 'Z') : new Date(0);
+    const db = b.end_utc ? new Date(b.end_utc.endsWith('Z') ? b.end_utc : b.end_utc + 'Z') : new Date(0);
+    return db - da;
+  });
+
+  function renderContest(c) {
     const actions = [];
     actions.push(`<button class="btn btn-outline btn-sm" onclick="editContest(${c.id})">Edit</button>`);
     if (c.status === 'draft') {
@@ -112,7 +140,6 @@ async function loadContests() {
     if (c.status !== 'live') {
       actions.push(`<button class="btn btn-danger btn-sm" onclick="deleteContest(${c.id}, '${esc(c.name).replace(/'/g, "\\'")}')">Delete</button>`);
     }
-    // Format start/end times for display
     let timeLine = '';
     if (c.start_utc) {
       const s = new Date(c.start_utc.endsWith('Z') ? c.start_utc : c.start_utc + 'Z');
@@ -134,7 +161,15 @@ async function loadContests() {
         ${actions.join('')}
       </div>
     </div>`;
-  }).join('');
+  }
+
+  el('contest-list-upcoming').innerHTML = upcoming.length
+    ? upcoming.map(renderContest).join('')
+    : '<p class="muted">No upcoming contests.</p>';
+
+  el('contest-list-completed').innerHTML = completed.length
+    ? completed.map(renderContest).join('')
+    : '<p class="muted">No completed contests yet.</p>';
 }
 
 // ── Create contest ───────────────────────────────────────────────────────────
