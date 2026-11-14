@@ -179,6 +179,26 @@ def list_contests(conn: sqlite3.Connection) -> list[sqlite3.Row]:
     ).fetchall()
 
 
+# Columns the Supabase `contests` table has (schema/supabase.sql).
+_CONTEST_MIRROR_COLS = (
+    "id", "name", "contest_type", "year", "location", "status",
+    "started_at", "completed_at", "start_utc", "end_utc",
+    "station_callsign", "category", "notes", "created_at",
+)
+
+
+def _enqueue_contest_mirror(conn: sqlite3.Connection, contest_id: int) -> None:
+    """Queue the contest row for Supabase. Contacts and score snapshots
+    reference contests(id) there, so if the contest itself never gets
+    mirrored every row for it fails the foreign key (23503)."""
+    row = conn.execute("SELECT * FROM contests WHERE id=?", (contest_id,)).fetchone()
+    if row is None:
+        return
+    keys = row.keys()
+    payload = {k: row[k] for k in _CONTEST_MIRROR_COLS if k in keys}
+    enqueue_mirror(conn, "upsert_contest", payload)
+
+
 def create_contest(conn: sqlite3.Connection, **fields) -> int:
     cols = ", ".join(fields.keys())
     placeholders = ", ".join("?" * len(fields))
@@ -186,6 +206,7 @@ def create_contest(conn: sqlite3.Connection, **fields) -> int:
         f"INSERT INTO contests ({cols}) VALUES ({placeholders})",
         list(fields.values()),
     )
+    _enqueue_contest_mirror(conn, cur.lastrowid)
     conn.commit()
     return cur.lastrowid
 
@@ -196,6 +217,7 @@ def update_contest(conn: sqlite3.Connection, contest_id: int, **fields) -> None:
     sets = [f"{k}=?" for k in fields]
     vals = list(fields.values()) + [contest_id]
     conn.execute(f"UPDATE contests SET {', '.join(sets)} WHERE id=?", vals)
+    _enqueue_contest_mirror(conn, contest_id)
     conn.commit()
 
 
@@ -222,6 +244,7 @@ def set_contest_status(conn: sqlite3.Connection, contest_id: int, status: str, *
         vals.append(v)
     vals.append(contest_id)
     conn.execute(f"UPDATE contests SET {', '.join(sets)} WHERE id=?", vals)
+    _enqueue_contest_mirror(conn, contest_id)
     conn.commit()
 
 
@@ -427,8 +450,11 @@ def enqueue_mirror(conn: sqlite3.Connection, operation: str, payload: dict) -> N
 
 
 def get_pending_mirror(conn: sqlite3.Connection, limit: int = 50) -> list[sqlite3.Row]:
+    # Fewest attempts first: rows that keep failing sink to the back instead
+    # of blocking new ones. Ordering by id alone let 100+ permanently failing
+    # rows (contests that never reached Supabase) starve every newer row.
     return conn.execute(
-        "SELECT * FROM mirror_queue ORDER BY id LIMIT ?", (limit,)
+        "SELECT * FROM mirror_queue ORDER BY attempts, id LIMIT ?", (limit,)
     ).fetchall()
 
 
